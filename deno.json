@@ -1,0 +1,17 @@
+{
+  "nodeModulesDir": "auto",
+  "tasks": {
+    "dev": "deno run -A npm:astro dev",
+    "build": "deno run -A npm:astro build",
+    "preview": "deno run -A npm:astro preview",
+    "start": "deno run -A --unstable-bare-node-builtins --unstable-detect-cjs ./dist/server/entry.mjs",
+    "check": "deno run -A npm:astro check",
+    "test": "deno test --allow-env",
+    "browsers": "playwright install chromium",
+    "favicons": "deno run -A npm:create-favicon ./src/assets/logo.svg ./static/favicons"
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom", "dom.iterable", "esnext"],
+    "strict": true
+  }
+}

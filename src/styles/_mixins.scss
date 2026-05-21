@@ -1,0 +1,164 @@
+$bp-mobile: 980px;
+$bp-compact: 640px;
+
+@mixin mobile {
+  @media (max-width: $bp-mobile) {
+    @content;
+  }
+}
+
+@mixin compact {
+  @media (max-width: $bp-compact) {
+    @content;
+  }
+}
+
+@mixin host-block {
+  :host {
+    display: block;
+    min-width: 0;
+  }
+}
+
+@mixin panel($padding: 0.875rem, $radius: 5px) {
+  border: 1px solid var(--border-strong);
+  border-radius: $radius;
+  background: var(--surface);
+  padding: $padding;
+}
+
+@mixin focus-ring {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+@mixin control-reset {
+  appearance: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@mixin bordered-control(
+  $radius: 4px,
+  $border: var(--border),
+  $background: var(--surface),
+) {
+  @include control-reset;
+  border: 1px solid $border;
+  border-radius: $radius;
+  background: $background;
+  color: var(--ink);
+}
+
+@mixin lift-hover($border: var(--ink), $duration: 140ms) {
+  transition:
+    border-color $duration ease,
+    transform $duration ease,
+    background $duration ease;
+
+  &:hover {
+    border-color: $border;
+    transform: translateY(-1px);
+  }
+}
+
+@mixin disabled-control {
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    transform: none;
+  }
+}
+
+@mixin icon-button($size: 2rem, $radius: 4px, $border: var(--border)) {
+  @include bordered-control($radius, $border);
+  display: inline-grid;
+  place-items: center;
+  width: $size;
+  height: $size;
+  cursor: pointer;
+  padding: 0;
+  @include lift-hover;
+  @include disabled-control;
+}
+
+@mixin action-button {
+  @include bordered-control;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.375rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-weight: 750;
+  @include lift-hover;
+  @include disabled-control;
+}
+
+@mixin text-input($radius: 4px, $background: var(--surface)) {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: $radius;
+  background: $background;
+  color: var(--ink);
+  font: inherit;
+
+  &:focus {
+    @include focus-ring;
+  }
+}
+
+@mixin list-card($padding: 0.625rem) {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  padding: $padding;
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease,
+    background 150ms ease;
+
+  &:hover {
+    border-color: var(--border-strong);
+    transform: translateX(2px);
+  }
+
+  &.selected {
+    border-style: dashed;
+    border-color: var(--ink);
+    background: var(--surface-muted);
+  }
+}
+
+@mixin overlay-backdrop($z-index, $alpha: 32%) {
+  position: fixed;
+  inset: 0;
+  background: rgb(20 24 28 / #{$alpha});
+  z-index: $z-index;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+
+  &.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@mixin seven-column-grid($gap: 0.25rem) {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: $gap;
+}
+
+@mixin uppercase-label($size: 0.76rem) {
+  color: var(--muted);
+  font-size: $size;
+  font-weight: 800;
+  text-transform: uppercase;
+}
