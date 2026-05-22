@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+<file target-language="en" source-language="es" original="lit-localize-inputs" datatype="plaintext">
+<body>
+<trans-unit id="s8c75818c4ac9196c">
+  <source>Cerrar menú</source>
+  <target>Close menu</target>
+</trans-unit>
+<trans-unit id="s7d2c90fa9396991f">
+  <source>Abrir menú</source>
+  <target>Open menu</target>
+</trans-unit>
+<trans-unit id="s535ba12f755d5f3a">
+  <source>Información</source>
+  <target>Information</target>
+</trans-unit>
+<trans-unit id="sd0c326f513c342ce">
+  <source>Configuración</source>
+  <target>Settings</target>
+</trans-unit>
+<trans-unit id="s5b8cb26d72ebc52d">
+  <source>Mostrar marcas de otros meses</source>
+  <target>Show marks from other months</target>
+</trans-unit>
+<trans-unit id="s18d7873f6c5b7fc5">
+  <source>Visualiza las marcas en los días que se asoman desde meses adyacentes.</source>
+  <target>Display marks on days that peek in from adjacent months.</target>
+</trans-unit>
+<trans-unit id="se244d2f0258f4f91">
+  <source>Leyendas por día</source>
+  <target>Legends per day</target>
+</trans-unit>
+<trans-unit id="s80bd21091a75da07">
+  <source>Máximo de leyendas que puedes apilar en una misma fecha.</source>
+  <target>Maximum number of legends you can stack on a single date.</target>
+</trans-unit>
+<trans-unit id="s351a37b6b243a5d6">
+  <source>Idioma</source>
+  <target>Language</target>
+</trans-unit>
+<trans-unit id="sc7a55b674cd75da8">
+  <source>Selecciona el idioma de la interfaz.</source>
+  <target>Choose the interface language.</target>
+</trans-unit>
+<trans-unit id="se3c3f7f6c265824b">
+  <source>Información de Markal</source>
+  <target>About Markal</target>
+</trans-unit>
+<trans-unit id="s75fa0361de494183">
+  <source>Acerca de Markal</source>
+  <target>About Markal</target>
+</trans-unit>
+<trans-unit id="s085ec084cf5fe9ec">
+  <source>Markal es una herramienta para crear calendarios marcables. Sólo tienes que definir un rango de fechas, definir el color de la leyenda y ¡comenzar a marcar tu calendario!</source>
+  <target>Markal is a tool for building markable calendars. Just pick a date range, set legend colors, and start marking your calendar!</target>
+</trans-unit>
+<trans-unit id="sf5b84b220a8dff1b">
+  <source>Versión</source>
+  <target>Version</target>
+</trans-unit>
+<trans-unit id="s3fc63bfcc8251a5e">
+  <source>Repositorio</source>
+  <target>Repository</target>
+</trans-unit>
+<trans-unit id="s6c3daaac4eed12f9">
+  <source>Changelog</source>
+  <target>Changelog</target>
+</trans-unit>
+<trans-unit id="h3a6cb767ef8fd4a2">
+  <source>Creado por
+                <x id="0" equiv-text="&lt;a href=&quot;https://adriandomc.com&quot; target=&quot;_blank&quot;&gt;"/>Adrián Domínguez Casasola<x id="1" equiv-text="&lt;/a&gt;"/></source>
+  <target>Created by <x id="0" equiv-text="&lt;a href=&quot;https://adriandomc.com&quot; target=&quot;_blank&quot;&gt;"/>Adrián Domínguez Casasola<x id="1" equiv-text="&lt;/a&gt;"/></target>
+</trans-unit>
+<trans-unit id="sdfdb45f8b8f46a75">
+  <source>Selector de leyenda</source>
+  <target>Legend picker</target>
+</trans-unit>
+<trans-unit id="s19b8fdde9c959239">
+  <source>Editar leyendas</source>
+  <target>Edit legends</target>
+</trans-unit>
+<trans-unit id="s3986b23d4354bb36">
+  <source>Editor de leyendas</source>
+  <target>Legend editor</target>
+</trans-unit>
+<trans-unit id="scf4fb7d26b1fdcca">
+  <source>Leyendas</source>
+  <target>Legends</target>
+</trans-unit>
+<trans-unit id="sed79a9dd2a2fc80c">
+  <source>Calendarios</source>
+  <target>Calendars</target>
+</trans-unit>
+<trans-unit id="s1c219a9cf2584a4e">
+  <source>Nuevo calendario</source>
+  <target>New calendar</target>
+</trans-unit>
+<trans-unit id="s1deee252f38884f9">
+  <source>Nombre del calendario</source>
+  <target>Calendar name</target>
+</trans-unit>
+<trans-unit id="s00f03c0d37de34f5">
+  <source>Duplicar calendario</source>
+  <target>Duplicate calendar</target>
+</trans-unit>
+<trans-unit id="sa4e5b2829ea555f8">
+  <source>Eliminar calendario</source>
+  <target>Delete calendar</target>
+</trans-unit>
+<trans-unit id="sb4eab6ceaeaeed31">
+  <source>Calendario <x id="0" equiv-text="${nextNumber}"/></source>
+  <target>Calendar <x id="0" equiv-text="${nextNumber}"/></target>
+</trans-unit>
+<trans-unit id="s172302236e56dd51">
+  <source><x id="0" equiv-text="${source.title}"/> copia</source>
+  <target><x id="0" equiv-text="${source.title}"/> copy</target>
+</trans-unit>
+<trans-unit id="sc4960d3c36d1f79f">
+  <source>¿Eliminar "<x id="0" equiv-text="${target.title}"/>"? Esta acción no se puede deshacer.</source>
+  <target>Delete "<x id="0" equiv-text="${target.title}"/>"? This action cannot be undone.</target>
+</trans-unit>
+<trans-unit id="s8b5a25bdedeac1d9">
+  <source>Preparando <x id="0" equiv-text="${formatLabel}"/></source>
+  <target>Preparing <x id="0" equiv-text="${formatLabel}"/></target>
+</trans-unit>
+<trans-unit id="sc59097d785bab23c">
+  <source><x id="0" equiv-text="${formatLabel}"/> listo</source>
+  <target><x id="0" equiv-text="${formatLabel}"/> ready</target>
+</trans-unit>
+<trans-unit id="sd6d831176b6cca0d">
+  <source>No se pudo exportar</source>
+  <target>Could not export</target>
+</trans-unit>
+<trans-unit id="sf8b8c1a73f64d931">
+  <source>Sin calendario</source>
+  <target>No calendar</target>
+</trans-unit>
+<trans-unit id="scfd2f6eeb05c057a">
+  <source>Inicio</source>
+  <target>Start</target>
+</trans-unit>
+<trans-unit id="sf2a6b4199c80ba7a">
+  <source>Fin</source>
+  <target>End</target>
+</trans-unit>
+<trans-unit id="s25db6d70dbe06d0a">
+  <source>Selector de fecha</source>
+  <target>Date picker</target>
+</trans-unit>
+<trans-unit id="s6b1c4fb634461e7c">
+  <source>Mes anterior</source>
+  <target>Previous month</target>
+</trans-unit>
+<trans-unit id="sb621415007181c43">
+  <source>Mes siguiente</source>
+  <target>Next month</target>
+</trans-unit>
+<trans-unit id="s3ceb76879ee1f362">
+  <source>Elige inicio</source>
+  <target>Choose start</target>
+</trans-unit>
+<trans-unit id="s61db5c8e25e4d6a2">
+  <source>Elige fin</source>
+  <target>Choose end</target>
+</trans-unit>
+<trans-unit id="s238c3ed6d3ecc66a">
+  <source>Cerrar</source>
+  <target>Close</target>
+</trans-unit>
+<trans-unit id="sc3e7aba543eca77d">
+  <source>Leyenda</source>
+  <target>Legend</target>
+</trans-unit>
+<trans-unit id="s2996f1ae3abd4014">
+  <source>Nueva leyenda</source>
+  <target>New legend</target>
+</trans-unit>
+<trans-unit id="sa2f3025435b7262c">
+  <source>Color de la leyenda</source>
+  <target>Legend color</target>
+</trans-unit>
+<trans-unit id="s39f5c6269b95b910">
+  <source>Texto de leyenda</source>
+  <target>Legend label</target>
+</trans-unit>
+<trans-unit id="sf73880747f0c3410">
+  <source>Eliminar leyenda</source>
+  <target>Delete legend</target>
+</trans-unit>
+<trans-unit id="weekday.sun.narrow">
+  <source>D</source>
+  <target>S</target>
+</trans-unit>
+<trans-unit id="weekday.mon.narrow">
+  <source>L</source>
+  <target>M</target>
+</trans-unit>
+<trans-unit id="weekday.tue.narrow">
+  <source>M</source>
+  <target>T</target>
+</trans-unit>
+<trans-unit id="weekday.wed.narrow">
+  <source>Mi</source>
+  <target>W</target>
+</trans-unit>
+<trans-unit id="weekday.thu.narrow">
+  <source>J</source>
+  <target>T</target>
+</trans-unit>
+<trans-unit id="weekday.fri.narrow">
+  <source>V</source>
+  <target>F</target>
+</trans-unit>
+<trans-unit id="weekday.sat.narrow">
+  <source>S</source>
+  <target>S</target>
+</trans-unit>
+</body>
+</file>
+</xliff>
