@@ -215,6 +215,22 @@
   <source>S</source>
   <target>S</target>
 </trans-unit>
+<trans-unit id="s08fcf168ec2f029e">
+  <source>Acciones rápidas</source>
+  <target>Quick actions</target>
+</trans-unit>
+<trans-unit id="s7da6222f6265f54c">
+  <source>Exportar</source>
+  <target>Export</target>
+</trans-unit>
+<trans-unit id="sdbc9e23bf50baf12">
+  <source>Exportar calendario</source>
+  <target>Export calendar</target>
+</trans-unit>
+<trans-unit id="s60472b94921ca97a">
+  <source>Elige el formato en el que quieres descargar tu calendario.</source>
+  <target>Choose the format to download your calendar.</target>
+</trans-unit>
 </body>
 </file>
 </xliff>
