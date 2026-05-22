@@ -7,6 +7,8 @@
     "start": "deno run -A --unstable-bare-node-builtins --unstable-detect-cjs ./dist/server/entry.mjs",
     "check": "deno run -A npm:astro check",
     "test": "deno test --allow-env",
+    "i18n:extract": "deno run -A npm:@lit/localize-tools/bin/lit-localize.js extract",
+    "i18n:build": "deno run -A npm:@lit/localize-tools/bin/lit-localize.js build",
     "browsers": "playwright install chromium",
     "favicons": "deno run -A npm:create-favicon ./src/assets/logo.svg ./static/favicons"
   },
