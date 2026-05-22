@@ -2,12 +2,12 @@ import "@lit-labs/ssr/lib/install-global-dom-shim.js";
 import { html } from "lit";
 import { render } from "@lit-labs/ssr";
 import { collectResult } from "@lit-labs/ssr/lib/render-result.js";
-import "../components/calendar-board.ts";
+import "../components/markal-calendar-board.ts";
 import type { CalendarDocument, LegendItem } from "../types.ts";
 
 export async function renderExportHtml(document: CalendarDocument): Promise<string> {
   const boardHtml = await collectResult(
-    render(html`<calendar-board print .document=${document}></calendar-board>`),
+    render(html`<markal-calendar-board print .document=${document}></markal-calendar-board>`),
   );
 
   return `<!doctype html>
