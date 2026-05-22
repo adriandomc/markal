@@ -58,6 +58,7 @@ export class MarkalApp extends LitElement {
     legendSheetOpen: { state: true },
     infoOpen: { state: true },
     settingsOpen: { state: true },
+    exportOpen: { state: true },
   };
 
   collection: CalendarCollection = loadCalendarCollection();
@@ -68,6 +69,7 @@ export class MarkalApp extends LitElement {
   legendSheetOpen = false;
   infoOpen = false;
   settingsOpen = false;
+  exportOpen = false;
 
   private mobileQuery: MediaQueryList | null = null;
   private mobileListener: ((event: MediaQueryListEvent) => void) | null = null;
@@ -205,14 +207,22 @@ export class MarkalApp extends LitElement {
 
   private openSettings = (): void => {
     this.captureFocus();
-    if (this.isMobile) {
-      this.sidebarOpen = false;
-    }
     this.settingsOpen = true;
   };
 
   private closeSettings = (): void => {
     this.settingsOpen = false;
+    this.restoreFocus();
+  };
+
+  private openExport = (): void => {
+    this.captureFocus();
+    this.exportMessage = "";
+    this.exportOpen = true;
+  };
+
+  private closeExport = (): void => {
+    this.exportOpen = false;
     this.restoreFocus();
   };
 
@@ -228,10 +238,20 @@ export class MarkalApp extends LitElement {
     if (changed.has("settingsOpen") && this.settingsOpen) {
       this.focusDialog(".settings-modal.open");
     }
+
+    if (changed.has("exportOpen") && this.exportOpen) {
+      this.focusDialog(".export-modal.open");
+    }
   }
 
   private handleGlobalKeydown = (event: KeyboardEvent): void => {
     if (event.key !== "Escape") {
+      return;
+    }
+
+    if (this.exportOpen) {
+      event.preventDefault();
+      this.closeExport();
       return;
     }
 
@@ -296,25 +316,57 @@ export class MarkalApp extends LitElement {
         @click="${this.closeSidebar}"
       >
       </div>
-      <button
-        class="${`sidebar-toggle${this.sidebarOpen ? " is-open" : ""}`}"
-        type="button"
-        aria-label="${this.sidebarOpen ? msg("Cerrar menú") : msg("Abrir menú")}"
-        aria-expanded="${String(this.sidebarOpen)}"
-        @click="${this.toggleSidebar}"
+      <nav
+        class="${`quick-bar${this.sidebarOpen ? " sidebar-open" : ""}`}"
+        aria-label="${msg("Acciones rápidas")}"
       >
-        <i class="${this.sidebarOpen ? "ph ph-x" : "ph ph-list"}"></i>
-      </button>
-      <button
-        class="${`info-button${this.sidebarOpen ? " hidden" : ""}`}"
-        type="button"
-        aria-label="${msg("Información")}"
-        title="${msg("Información")}"
-        aria-hidden="${String(this.sidebarOpen)}"
-        @click="${this.openInfo}"
-      >
-        <i class="ph ph-info"></i>
-      </button>
+        <button
+          class="${`quick-button quick-toggle${
+            this.sidebarOpen ? " is-open" : ""
+          }`}"
+          type="button"
+          aria-label="${this.sidebarOpen
+            ? msg("Cerrar menú")
+            : msg("Abrir menú")}"
+          aria-expanded="${String(this.sidebarOpen)}"
+          @click="${this.toggleSidebar}"
+        >
+          <i class="${this.sidebarOpen ? "ph ph-x" : "ph ph-list"}"></i>
+        </button>
+        <button
+          class="quick-button"
+          type="button"
+          aria-label="${msg("Exportar")}"
+          title="${msg("Exportar")}"
+          aria-hidden="${String(this.sidebarOpen)}"
+          ?inert="${this.sidebarOpen}"
+          @click="${this.openExport}"
+        >
+          <i class="ph ph-export"></i>
+        </button>
+        <button
+          class="quick-button"
+          type="button"
+          aria-label="${msg("Configuración")}"
+          title="${msg("Configuración")}"
+          aria-hidden="${String(this.sidebarOpen)}"
+          ?inert="${this.sidebarOpen}"
+          @click="${this.openSettings}"
+        >
+          <i class="ph ph-gear-six"></i>
+        </button>
+        <button
+          class="quick-button"
+          type="button"
+          aria-label="${msg("Información")}"
+          title="${msg("Información")}"
+          aria-hidden="${String(this.sidebarOpen)}"
+          ?inert="${this.sidebarOpen}"
+          @click="${this.openInfo}"
+        >
+          <i class="ph ph-info"></i>
+        </button>
+      </nav>
       <main class="app-shell">
         ${this.renderSidebar()}
         <div class="main-pane">
@@ -347,6 +399,62 @@ export class MarkalApp extends LitElement {
       ${this.isMobile
         ? this.renderLegendDock(document.legends)
         : nothing} ${this.renderInfoModal()} ${this.renderSettingsModal()}
+      ${this.renderExportModal()}
+    `;
+  }
+
+  private renderExportModal() {
+    return html`
+      <div
+        class="${`export-backdrop${this.exportOpen ? " visible" : ""}`}"
+        @click="${this.closeExport}"
+      >
+      </div>
+      <div
+        class="${`export-modal${this.exportOpen ? " open" : ""}`}"
+        role="dialog"
+        aria-label="${msg("Exportar calendario")}"
+        aria-modal="${String(this.exportOpen)}"
+        aria-hidden="${String(!this.exportOpen)}"
+        tabindex="-1"
+        ?inert="${!this.exportOpen}"
+      >
+        <header class="export-modal-header">
+          <span class="export-modal-title">${msg("Exportar calendario")}</span>
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="${msg("Cerrar")}"
+            @click="${this.closeExport}"
+          >
+            <i class="ph ph-x"></i>
+          </button>
+        </header>
+        <div class="export-modal-body">
+          <p class="export-modal-hint">
+            ${msg("Elige el formato en el que quieres descargar tu calendario.")}
+          </p>
+          <div class="export-actions">
+            <button
+              class="action-button"
+              type="button"
+              @click="${() => this.exportCalendar("png")}"
+            >
+              <i class="ph ph-file-png"></i>
+              PNG
+            </button>
+            <button
+              class="action-button"
+              type="button"
+              @click="${() => this.exportCalendar("pdf")}"
+            >
+              <i class="ph ph-file-pdf"></i>
+              PDF
+            </button>
+          </div>
+          <div class="export-status" role="status">${this.exportMessage}</div>
+        </div>
+      </div>
     `;
   }
 
@@ -647,29 +755,6 @@ export class MarkalApp extends LitElement {
             this.renderCalendarItem(calendar)
           )}
         </div>
-        <footer class="sidebar-footer">
-          <button
-            class="action-button sidebar-settings"
-            type="button"
-            @click="${this.openSettings}"
-          >
-            <i class="ph ph-gear-six"></i>
-            ${msg("Configuración")}
-          </button>
-          <div class="status" role="status">${this.exportMessage}</div>
-          <div class="export-actions">
-            <button class="action-button" type="button" @click="${() =>
-              this.exportCalendar("png")}">
-              <i class="ph ph-file-png"></i>
-              PNG
-            </button>
-            <button class="action-button" type="button" @click="${() =>
-              this.exportCalendar("pdf")}">
-              <i class="ph ph-file-pdf"></i>
-              PDF
-            </button>
-          </div>
-        </footer>
       </aside>
     `;
   }
