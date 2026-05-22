@@ -42,13 +42,16 @@ export function createCalendarDocument(title?: string): CalendarDocument {
   };
 }
 
-export function duplicateCalendarDocument(document: CalendarDocument): CalendarDocument {
+export function duplicateCalendarDocument(
+  document: CalendarDocument,
+  title?: string,
+): CalendarDocument {
   const now = new Date().toISOString();
 
   return {
     ...structuredClone(document),
     id: createId("cal"),
-    title: `${document.title} copia`,
+    title: title ?? `${document.title} copia`,
     createdAt: now,
     updatedAt: now,
   };

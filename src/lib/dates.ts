@@ -1,27 +1,9 @@
 import type { DateKey, DateRange, ViewMode } from "../types.ts";
 
-export const MONTH_NAMES = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
-];
-
-export const WEEKDAY_LABELS = ["D", "L", "M", "Mi", "J", "V", "S"];
-
 export interface MonthInfo {
   year: number;
   monthIndex: number;
   key: string;
-  label: string;
 }
 
 export interface DayCell {
@@ -120,7 +102,6 @@ export function monthsInRange(range: DateRange): MonthInfo[] {
       year,
       monthIndex,
       key: `${year}-${String(monthIndex + 1).padStart(2, "0")}`,
-      label: `${MONTH_NAMES[monthIndex]} ${year}`,
     });
 
     monthIndex += 1;
@@ -154,11 +135,22 @@ export function buildMonthGrid(year: number, monthIndex: number, range: DateRang
   return cells;
 }
 
-export function formatDisplayDate(key: DateKey): string {
-  const date = parseDateKey(key);
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${day}/${month}/${date.getFullYear()}`;
+export function formatDisplayDate(key: DateKey, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(parseDateKey(key));
+}
+
+export function formatMonthLabel(
+  year: number,
+  monthIndex: number,
+  locale: string,
+): string {
+  const name = new Intl.DateTimeFormat(locale, { month: "long" })
+    .format(new Date(year, monthIndex, 1));
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${year}`;
 }
 
 export function yearRangeFor(dateKey: DateKey): DateRange {

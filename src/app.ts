@@ -1,5 +1,13 @@
 import { html, LitElement, nothing } from "lit";
+import { msg, str, updateWhenLocaleChanges } from "@lit/localize";
 import appStyles from "./app.scss?inline";
+import {
+  changeLocale as applyLocaleChange,
+  getLocale,
+  initLocalization,
+  LOCALE_OPTIONS,
+  type LocaleCode,
+} from "./i18n/setup.ts";
 import "./components/calendar-board.ts";
 import "./components/markal-switch.ts";
 import "./components/date-range-control.ts";
@@ -64,6 +72,23 @@ export class MarkalApp extends LitElement {
   private mobileQuery: MediaQueryList | null = null;
   private mobileListener: ((event: MediaQueryListEvent) => void) | null = null;
   private restoreFocusElement: HTMLElement | null = null;
+
+  constructor() {
+    super();
+    updateWhenLocaleChanges(this);
+    void initLocalization();
+  }
+
+  private get currentLocale(): LocaleCode {
+    return getLocale() as LocaleCode;
+  }
+
+  private changeLocale = (code: LocaleCode): void => {
+    if (code === this.currentLocale) {
+      return;
+    }
+    void applyLocaleChange(code);
+  };
 
   private matchesMobile(): boolean {
     return typeof globalThis.matchMedia === "function" &&
@@ -274,7 +299,7 @@ export class MarkalApp extends LitElement {
       <button
         class="${`sidebar-toggle${this.sidebarOpen ? " is-open" : ""}`}"
         type="button"
-        aria-label="${this.sidebarOpen ? "Cerrar menú" : "Abrir menú"}"
+        aria-label="${this.sidebarOpen ? msg("Cerrar menú") : msg("Abrir menú")}"
         aria-expanded="${String(this.sidebarOpen)}"
         @click="${this.toggleSidebar}"
       >
@@ -283,8 +308,8 @@ export class MarkalApp extends LitElement {
       <button
         class="${`info-button${this.sidebarOpen ? " hidden" : ""}`}"
         type="button"
-        aria-label="Información"
-        title="Información"
+        aria-label="${msg("Información")}"
+        title="${msg("Información")}"
         aria-hidden="${String(this.sidebarOpen)}"
         @click="${this.openInfo}"
       >
@@ -341,18 +366,18 @@ export class MarkalApp extends LitElement {
       <div
         class="${`settings-modal${this.settingsOpen ? " open" : ""}`}"
         role="dialog"
-        aria-label="Configuración"
+        aria-label="${msg("Configuración")}"
         aria-modal="${String(this.settingsOpen)}"
         aria-hidden="${String(!this.settingsOpen)}"
         tabindex="-1"
         ?inert="${!this.settingsOpen}"
       >
         <header class="settings-modal-header">
-          <span class="settings-modal-title">Configuración</span>
+          <span class="settings-modal-title">${msg("Configuración")}</span>
           <button
             class="icon-button"
             type="button"
-            aria-label="Cerrar"
+            aria-label="${msg("Cerrar")}"
             @click="${this.closeSettings}"
           >
             <i class="ph ph-x"></i>
@@ -362,31 +387,34 @@ export class MarkalApp extends LitElement {
           <div class="settings-row">
             <div class="settings-row-text">
               <span class="settings-row-title">
-                Mostrar marcas de otros meses
+                ${msg("Mostrar marcas de otros meses")}
               </span>
               <span class="settings-row-help">
-                Visualiza las marcas en los días que se asoman desde meses
-                adyacentes.
+                ${msg(
+                  "Visualiza las marcas en los días que se asoman desde meses adyacentes.",
+                )}
               </span>
             </div>
             <markal-switch
               ?checked="${settings.showOutMonthMarks}"
-              label="Mostrar marcas de otros meses"
+              label="${msg("Mostrar marcas de otros meses")}"
               @change="${(event: CustomEvent<boolean>) =>
                 this.updateSettings({ showOutMonthMarks: event.detail })}"
             ></markal-switch>
           </div>
           <div class="settings-row settings-row-stacked">
             <div class="settings-row-text">
-              <span class="settings-row-title">Leyendas por día</span>
+              <span class="settings-row-title">${msg("Leyendas por día")}</span>
               <span class="settings-row-help">
-                Máximo de leyendas que puedes apilar en una misma fecha.
+                ${msg(
+                  "Máximo de leyendas que puedes apilar en una misma fecha.",
+                )}
               </span>
             </div>
             <div
               class="settings-options"
               role="radiogroup"
-              aria-label="Leyendas por día"
+              aria-label="${msg("Leyendas por día")}"
             >
               ${options.map((value) =>
                 html`
@@ -404,6 +432,38 @@ export class MarkalApp extends LitElement {
               )}
             </div>
           </div>
+          ${this.renderLanguageRow()}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderLanguageRow() {
+    return html`
+      <div class="settings-row settings-row-stacked">
+        <div class="settings-row-text">
+          <span class="settings-row-title">${msg("Idioma")}</span>
+          <span class="settings-row-help">
+            ${msg("Selecciona el idioma de la interfaz.")}
+          </span>
+        </div>
+        <div
+          class="settings-options"
+          role="radiogroup"
+          aria-label="${msg("Idioma")}"
+        >
+          ${LOCALE_OPTIONS.map((option) => {
+            const selected = this.currentLocale === option.code;
+            return html`
+              <button
+                class="${`settings-option${selected ? " selected" : ""}`}"
+                type="button"
+                role="radio"
+                aria-checked="${String(selected)}"
+                @click="${() => this.changeLocale(option.code)}"
+              >${option.label}</button>
+            `;
+          })}
         </div>
       </div>
     `;
@@ -419,18 +479,18 @@ export class MarkalApp extends LitElement {
       <div
         class="${`info-modal${this.infoOpen ? " open" : ""}`}"
         role="dialog"
-        aria-label="Información de Markal"
+        aria-label="${msg("Información de Markal")}"
         aria-modal="${String(this.infoOpen)}"
         aria-hidden="${String(!this.infoOpen)}"
         tabindex="-1"
         ?inert="${!this.infoOpen}"
       >
         <header class="info-modal-header">
-          <span class="info-modal-title">Acerca de Markal</span>
+          <span class="info-modal-title">${msg("Acerca de Markal")}</span>
           <button
             class="icon-button"
             type="button"
-            aria-label="Cerrar"
+            aria-label="${msg("Cerrar")}"
             @click="${this.closeInfo}"
           >
             <i class="ph ph-x"></i>
@@ -438,17 +498,17 @@ export class MarkalApp extends LitElement {
         </header>
         <div class="info-modal-body">
           <p class="info-description">
-            Markal es una herramienta para crear calendarios marcables. Sólo tienes
-            que definir un rango de fechas, definir el color de la leyenda y ¡comenzar
-            a marcar tu calendario!
+            ${msg(
+              "Markal es una herramienta para crear calendarios marcables. Sólo tienes que definir un rango de fechas, definir el color de la leyenda y ¡comenzar a marcar tu calendario!",
+            )}
           </p>
           <div class="info-meta">
             <div class="info-meta-row">
-              <span class="info-meta-label">Versión</span>
+              <span class="info-meta-label">${msg("Versión")}</span>
               <span class="info-meta-value">${APP_VERSION}</span>
             </div>
             <div class="info-meta-row">
-              <span class="info-meta-label">Repositorio</span>
+              <span class="info-meta-label">${msg("Repositorio")}</span>
               <a
                 class="info-link"
                 href="${REPO_URL}"
@@ -457,7 +517,7 @@ export class MarkalApp extends LitElement {
               >GitHub</a>
             </div>
             <div class="info-meta-row">
-              <span class="info-meta-label">Changelog</span>
+              <span class="info-meta-label">${msg("Changelog")}</span>
               <a
                 class="info-link"
                 href="${CHANGELOG_URL}"
@@ -468,7 +528,14 @@ export class MarkalApp extends LitElement {
           </div>
         </div>
         <div class="info-modal-footer">
-          <p style="text-align:center">Creado por <a href="https://adriandomc.com" target="_blank">Adrián Domínguez Casasola</a></p>
+          <p style="text-align:center">
+            ${msg(
+              html`Creado por
+                <a href="https://adriandomc.com" target="_blank"
+                  >Adrián Domínguez Casasola</a
+                >`,
+            )}
+          </p>
         </div>
       </div>
     `;
@@ -487,7 +554,7 @@ export class MarkalApp extends LitElement {
             this.legendSheetOpen || this.sidebarOpen ? " is-hidden" : ""
           }`}"
           role="toolbar"
-          aria-label="Selector de leyenda"
+          aria-label="${msg("Selector de leyenda")}"
           aria-hidden="${String(this.legendSheetOpen || this.sidebarOpen)}"
           ?inert="${this.legendSheetOpen || this.sidebarOpen}"
         >
@@ -500,7 +567,7 @@ export class MarkalApp extends LitElement {
                   }`}"
                   type="button"
                   style="${`--chip-color: ${legend.fillColor}`}"
-                  aria-label="${legend.label || "Leyenda"}"
+                  aria-label="${legend.label || msg("Leyenda")}"
                   aria-pressed="${String(
                     legend.id === this.selectedLegendId,
                   )}"
@@ -513,7 +580,7 @@ export class MarkalApp extends LitElement {
           <button
             class="legend-edit"
             type="button"
-            aria-label="Editar leyendas"
+            aria-label="${msg("Editar leyendas")}"
             @click="${this.openLegendSheet}"
           >
             <i class="ph ph-pencil-simple"></i>
@@ -522,18 +589,18 @@ export class MarkalApp extends LitElement {
         <div
           class="${`legend-sheet${this.legendSheetOpen ? " open" : ""}`}"
           role="dialog"
-          aria-label="Editor de leyendas"
+          aria-label="${msg("Editor de leyendas")}"
           aria-modal="${String(this.legendSheetOpen)}"
           aria-hidden="${String(!this.legendSheetOpen)}"
           tabindex="-1"
           ?inert="${!this.legendSheetOpen}"
         >
           <header class="legend-sheet-header">
-            <span class="legend-sheet-title">Leyendas</span>
+            <span class="legend-sheet-title">${msg("Leyendas")}</span>
             <button
               class="icon-button"
               type="button"
-              aria-label="Cerrar"
+              aria-label="${msg("Cerrar")}"
               @click="${this.closeLegendSheet}"
             >
               <i class="ph ph-x"></i>
@@ -565,11 +632,11 @@ export class MarkalApp extends LitElement {
           Markal
         </h1>
         <div class="sidebar-section-title">
-          <span>Calendarios</span>
+          <span>${msg("Calendarios")}</span>
           <button
             class="icon-button"
             type="button"
-            aria-label="Nuevo calendario"
+            aria-label="${msg("Nuevo calendario")}"
             @click="${this.createCalendar}"
           >
             <i class="ph ph-plus"></i>
@@ -587,7 +654,7 @@ export class MarkalApp extends LitElement {
             @click="${this.openSettings}"
           >
             <i class="ph ph-gear-six"></i>
-            Configuración
+            ${msg("Configuración")}
           </button>
           <div class="status" role="status">${this.exportMessage}</div>
           <div class="export-actions">
@@ -617,7 +684,7 @@ export class MarkalApp extends LitElement {
         <input
           class="calendar-name"
           type="text"
-          aria-label="Nombre del calendario"
+          aria-label="${msg("Nombre del calendario")}"
           .value="${calendar.title}"
           @focus="${() => this.selectCalendarById(calendar.id)}"
           @input="${(event: InputEvent) =>
@@ -629,7 +696,7 @@ export class MarkalApp extends LitElement {
         <button
           class="icon-button"
           type="button"
-          aria-label="Duplicar calendario"
+          aria-label="${msg("Duplicar calendario")}"
           @click="${(event: Event) =>
             this.duplicateCalendarById(event, calendar.id)}"
         >
@@ -638,7 +705,7 @@ export class MarkalApp extends LitElement {
         <button
           class="icon-button"
           type="button"
-          aria-label="Eliminar calendario"
+          aria-label="${msg("Eliminar calendario")}"
           ?disabled="${this.collection.documents.length <= 1}"
           @click="${(event: Event) =>
             this.deleteCalendarById(event, calendar.id)}"
@@ -695,8 +762,9 @@ export class MarkalApp extends LitElement {
   }
 
   private createCalendar = (): void => {
+    const nextNumber = this.collection.documents.length + 1;
     const document = createCalendarDocument(
-      `Calendario ${this.collection.documents.length + 1}`,
+      msg(str`Calendario ${nextNumber}`),
     );
     this.selectedLegendId = document.legends[0]?.id ?? "";
     this.persist({
@@ -715,7 +783,10 @@ export class MarkalApp extends LitElement {
       return;
     }
 
-    const document = duplicateCalendarDocument(source);
+    const document = duplicateCalendarDocument(
+      source,
+      msg(str`${source.title} copia`),
+    );
     this.selectedLegendId = document.legends[0]?.id ?? "";
     this.persist({
       ...this.collection,
@@ -736,7 +807,9 @@ export class MarkalApp extends LitElement {
     if (
       !target ||
       !globalThis.confirm(
-        `¿Eliminar "${target.title}"? Esta acción no se puede deshacer.`,
+        msg(
+          str`¿Eliminar "${target.title}"? Esta acción no se puede deshacer.`,
+        ),
       )
     ) {
       return;
@@ -859,7 +932,8 @@ export class MarkalApp extends LitElement {
   };
 
   private exportCalendar = async (format: "png" | "pdf"): Promise<void> => {
-    this.exportMessage = `Preparando ${format.toUpperCase()}`;
+    const formatLabel = format.toUpperCase();
+    this.exportMessage = msg(str`Preparando ${formatLabel}`);
 
     try {
       const response = await fetch(`/api/export/${format}`, {
@@ -887,11 +961,11 @@ export class MarkalApp extends LitElement {
       }.${format}`;
       anchor.click();
       URL.revokeObjectURL(url);
-      this.exportMessage = `${format.toUpperCase()} listo`;
+      this.exportMessage = msg(str`${formatLabel} listo`);
     } catch (error) {
       this.exportMessage = error instanceof Error
         ? error.message
-        : "No se pudo exportar";
+        : msg("No se pudo exportar");
     }
   };
 }

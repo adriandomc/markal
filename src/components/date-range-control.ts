@@ -1,15 +1,17 @@
 import { html, LitElement, nothing } from "lit";
+import { msg, updateWhenLocaleChanges } from "@lit/localize";
+import { getLocale } from "../i18n/setup.ts";
 import dateRangeStyles from "./date-range-control.scss?inline";
 import type { DateKey, DateRange } from "../types.ts";
 import {
   buildMonthGrid,
   formatDisplayDate,
-  MONTH_NAMES,
+  formatMonthLabel,
   normalizeRange,
   parseDateKey,
   todayKey,
-  WEEKDAY_LABELS,
 } from "../lib/dates.ts";
+import { weekdayNarrowLabels } from "../lib/i18n-labels.ts";
 import { iconStyles } from "../lib/icon-styles.ts";
 import { localStyles } from "../lib/lit-styles.ts";
 
@@ -27,6 +29,11 @@ export class DateRangeControl extends LitElement {
   activeField: ActiveField = "start";
   open = false;
   visibleMonthKey = todayKey().slice(0, 7);
+
+  constructor() {
+    super();
+    updateWhenLocaleChanges(this);
+  }
 
   static styles = [iconStyles, localStyles(dateRangeStyles)];
 
@@ -46,8 +53,8 @@ export class DateRangeControl extends LitElement {
     const normalized = normalizeRange(this.range);
     return html`
       <div class="range-shell">
-        ${this.renderChip("start", "Inicio", normalized.start)} ${this
-          .renderChip("end", "Fin", normalized.end)}
+        ${this.renderChip("start", msg("Inicio"), normalized.start)}
+        ${this.renderChip("end", msg("Fin"), normalized.end)}
       </div>
       ${this.open ? this.renderPicker(normalized) : nothing}
     `;
@@ -64,7 +71,7 @@ export class DateRangeControl extends LitElement {
         @click="${() => this.openPicker(field)}"
       >
         <span class="chip-label">${label}</span>
-        <span class="chip-value">${formatDisplayDate(date)}</span>
+        <span class="chip-value">${formatDisplayDate(date, getLocale())}</span>
       </button>
     `;
   }
@@ -73,12 +80,14 @@ export class DateRangeControl extends LitElement {
     const [year, month] = this.visibleMonthKey.split("-").map(Number);
     const monthIndex = month - 1;
     const cells = buildMonthGrid(year, monthIndex, range);
+    const locale = getLocale();
+    const weekdays = weekdayNarrowLabels();
 
     return html`
       <div
         class="picker"
         role="dialog"
-        aria-label="Selector de fecha"
+        aria-label="${msg("Selector de fecha")}"
         tabindex="-1"
         @keydown="${this.handlePickerKeydown}"
       >
@@ -86,23 +95,25 @@ export class DateRangeControl extends LitElement {
           <button
             class="icon-button"
             type="button"
-            aria-label="Mes anterior"
+            aria-label="${msg("Mes anterior")}"
             @click="${() => this.shiftMonth(-1)}"
           >
             <i class="ph ph-caret-left"></i>
           </button>
-          <div class="month-title">${MONTH_NAMES[monthIndex]} ${year}</div>
+          <div class="month-title">
+            ${formatMonthLabel(year, monthIndex, locale)}
+          </div>
           <button
             class="icon-button"
             type="button"
-            aria-label="Mes siguiente"
+            aria-label="${msg("Mes siguiente")}"
             @click="${() => this.shiftMonth(1)}"
           >
             <i class="ph ph-caret-right"></i>
           </button>
         </div>
         <div class="weekdays">
-          ${WEEKDAY_LABELS.map((label) =>
+          ${weekdays.map((label) =>
             html`
               <span>${label}</span>
             `
@@ -129,12 +140,17 @@ export class DateRangeControl extends LitElement {
           })}
         </div>
         <div class="picker-actions">
-          <span class="active-hint">${this.activeField === "start"
-            ? "Elige inicio"
-            : "Elige fin"}</span>
-          <button class="plain-button" type="button" @click="${this
-            .closePicker}">
-            Cerrar
+          <span class="active-hint">
+            ${this.activeField === "start"
+              ? msg("Elige inicio")
+              : msg("Elige fin")}
+          </span>
+          <button
+            class="plain-button"
+            type="button"
+            @click="${this.closePicker}"
+          >
+            ${msg("Cerrar")}
           </button>
         </div>
       </div>
