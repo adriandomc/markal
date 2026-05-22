@@ -1,4 +1,6 @@
 import { html, LitElement, nothing } from "lit";
+import { msg, updateWhenLocaleChanges } from "@lit/localize";
+import { getLocale } from "../i18n/setup.ts";
 import boardStyles from "./calendar-board.scss?inline";
 import type {
   CalendarDocument,
@@ -10,12 +12,13 @@ import type {
 import {
   buildMonthGrid,
   enumerateDays,
+  formatMonthLabel,
   getAutoViewMode,
   monthsInRange,
   normalizeRange,
   parseDateKey,
-  WEEKDAY_LABELS,
 } from "../lib/dates.ts";
+import { weekdayNarrowLabels } from "../lib/i18n-labels.ts";
 import { pickTextStyle } from "../lib/contrast.ts";
 import { localStyles } from "../lib/lit-styles.ts";
 
@@ -42,6 +45,11 @@ export class CalendarBoard extends LitElement {
   private dragMoved = false;
   private static readonly DRAG_THRESHOLD_PX = 8;
 
+  constructor() {
+    super();
+    updateWhenLocaleChanges(this);
+  }
+
   static styles = localStyles(boardStyles);
 
   disconnectedCallback(): void {
@@ -52,7 +60,7 @@ export class CalendarBoard extends LitElement {
   render() {
     if (!this.document) {
       return html`
-        <div class="empty-state">Sin calendario</div>
+        <div class="empty-state">${msg("Sin calendario")}</div>
       `;
     }
 
@@ -76,6 +84,7 @@ export class CalendarBoard extends LitElement {
   }
 
   private renderWeekRange() {
+    const weekdays = weekdayNarrowLabels();
     return html`
       <div class="week-range">
         ${enumerateDays(this.document.dateRange).map((date) => {
@@ -86,7 +95,7 @@ export class CalendarBoard extends LitElement {
             true,
             true,
             "week-day",
-            WEEKDAY_LABELS[parsed.getDay()],
+            weekdays[parsed.getDay()],
           );
         })}
       </div>
@@ -95,10 +104,15 @@ export class CalendarBoard extends LitElement {
 
   private renderMonthRange(mode: ViewMode) {
     const months = monthsInRange(this.document.dateRange);
+    const locale = getLocale();
     return html`
       <div class="months mode-${mode}">
         ${months.map((month) =>
-          this.renderMonth(month.year, month.monthIndex, month.label)
+          this.renderMonth(
+            month.year,
+            month.monthIndex,
+            formatMonthLabel(month.year, month.monthIndex, locale),
+          )
         )}
       </div>
     `;
@@ -106,10 +120,11 @@ export class CalendarBoard extends LitElement {
 
   private renderMonth(year: number, monthIndex: number, label: string) {
     const cells = buildMonthGrid(year, monthIndex, this.document.dateRange);
+    const weekdays = weekdayNarrowLabels();
     return html`
       <article class="month">
         <div class="month-title">${label}</div>
-        <div class="weekdays">${WEEKDAY_LABELS.map((weekday) =>
+        <div class="weekdays">${weekdays.map((weekday) =>
           html`
             <span>${weekday}</span>
           `
