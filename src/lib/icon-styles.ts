@@ -30,6 +30,10 @@ export const iconStyles = css`
     content: "\\e1ca";
   }
 
+  .ph.ph-export::before {
+    content: "\\eaf0";
+  }
+
   .ph.ph-file-pdf::before {
     content: "\\e702";
   }
