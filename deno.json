@@ -10,7 +10,7 @@
     "i18n:extract": "deno run -A npm:@lit/localize-tools/bin/lit-localize.js extract",
     "i18n:build": "deno run -A npm:@lit/localize-tools/bin/lit-localize.js build",
     "browsers": "playwright install chromium",
-    "favicons": "deno run -A npm:create-favicon ./src/assets/logo.svg ./public/favicons"
+    "favicons": "deno run -A npm:create-favicon ./src/assets/logo.svg ./public"
   },
   "compilerOptions": {
     "lib": ["deno.ns", "dom", "dom.iterable", "esnext"],
