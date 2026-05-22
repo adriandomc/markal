@@ -37,14 +37,16 @@ export class CalendarBoard extends LitElement {
   print = false;
   dragAction: MarkAction | null = null;
   private dragStartDate: DateKey | null = null;
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private dragMoved = false;
+  private static readonly DRAG_THRESHOLD_PX = 8;
 
   static styles = localStyles(boardStyles);
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    globalThis.removeEventListener("pointermove", this.handlePointerMove);
-    globalThis.removeEventListener("pointerup", this.stopDrag);
-    globalThis.removeEventListener("pointercancel", this.stopDrag);
+    this.cleanupDrag();
   }
 
   render() {
@@ -61,7 +63,7 @@ export class CalendarBoard extends LitElement {
     return html`
       <section
         class="${paintMode ? "board paint-mode" : "board"}"
-        @pointerleave="${this.stopDrag}"
+        @pointerleave="${this.handlePointerCancel}"
       >
         <header class="board-header">
           <h2 class="title">${this.document.title}</h2>
@@ -201,8 +203,10 @@ export class CalendarBoard extends LitElement {
     if (!this.selectedLegendId) {
       return;
     }
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
 
-    event.preventDefault();
     const target = event.currentTarget as Element | null;
     if (
       target && "releasePointerCapture" in target &&
@@ -216,15 +220,31 @@ export class CalendarBoard extends LitElement {
       : "add";
     this.dragAction = action;
     this.dragStartDate = date;
+    this.dragStartX = event.clientX;
+    this.dragStartY = event.clientY;
+    this.dragMoved = false;
     globalThis.addEventListener("pointermove", this.handlePointerMove);
-    globalThis.addEventListener("pointerup", this.stopDrag, { once: true });
-    globalThis.addEventListener("pointercancel", this.stopDrag, { once: true });
-    this.dispatchMarkRange(date, date, action);
+    globalThis.addEventListener("pointerup", this.handlePointerUp);
+    globalThis.addEventListener("pointercancel", this.handlePointerCancel);
   }
 
   private handlePointerMove = (event: PointerEvent): void => {
     if (!this.dragAction || !this.dragStartDate) {
       return;
+    }
+
+    if (!this.dragMoved) {
+      const dx = event.clientX - this.dragStartX;
+      const dy = event.clientY - this.dragStartY;
+      if (Math.hypot(dx, dy) < CalendarBoard.DRAG_THRESHOLD_PX) {
+        return;
+      }
+      this.dragMoved = true;
+      this.dispatchMarkRange(
+        this.dragStartDate,
+        this.dragStartDate,
+        this.dragAction,
+      );
     }
 
     const root = this.shadowRoot;
@@ -248,6 +268,21 @@ export class CalendarBoard extends LitElement {
     this.dispatchMarkRange(this.dragStartDate, date, this.dragAction);
   };
 
+  private handlePointerUp = (): void => {
+    if (this.dragAction && this.dragStartDate && !this.dragMoved) {
+      this.dispatchMarkRange(
+        this.dragStartDate,
+        this.dragStartDate,
+        this.dragAction,
+      );
+    }
+    this.cleanupDrag();
+  };
+
+  private handlePointerCancel = (): void => {
+    this.cleanupDrag();
+  };
+
   private dispatchMarkRange(
     start: DateKey,
     end: DateKey,
@@ -265,11 +300,14 @@ export class CalendarBoard extends LitElement {
     );
   }
 
-  private stopDrag = (): void => {
+  private cleanupDrag(): void {
     this.dragAction = null;
     this.dragStartDate = null;
+    this.dragMoved = false;
     globalThis.removeEventListener("pointermove", this.handlePointerMove);
-  };
+    globalThis.removeEventListener("pointerup", this.handlePointerUp);
+    globalThis.removeEventListener("pointercancel", this.handlePointerCancel);
+  }
 }
 
 customElements.define("calendar-board", CalendarBoard);
