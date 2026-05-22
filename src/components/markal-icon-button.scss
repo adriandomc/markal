@@ -1,0 +1,21 @@
+@use "../styles/mixins" as *;
+
+:host {
+  display: inline-block;
+}
+
+button {
+  @include icon-button(2.375rem, 4px, var(--border));
+}
+
+:host([size="sm"]) button {
+  @include icon-button(2rem, 4px, var(--border));
+}
+
+:host([size="lg"]) button {
+  @include icon-button(var(--toggle-size, 2.5rem), 5px, var(--border-strong));
+}
+
+:host([variant="strong"]) button {
+  border-color: var(--border-strong);
+}
