@@ -16,6 +16,7 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 COPY deno.json deno.lock package.json ./
 COPY astro.config.mjs tsconfig.json ./
 COPY src ./src
+COPY public ./public
 
 RUN deno install --allow-scripts
 RUN deno task build
