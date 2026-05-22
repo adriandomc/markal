@@ -43,7 +43,12 @@ export class MarkalCalendarBoard extends LitElement {
   private dragStartX = 0;
   private dragStartY = 0;
   private dragMoved = false;
-  private static readonly DRAG_THRESHOLD_PX = 8;
+  private activePointerId: number | null = null;
+  private isTouchPointer = false;
+  private longPressTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
+  private static readonly MOUSE_DRAG_PX = 8;
+  private static readonly TAP_CANCEL_PX = 10;
+  private static readonly LONG_PRESS_MS = 250;
 
   constructor() {
     super();
@@ -221,6 +226,9 @@ export class MarkalCalendarBoard extends LitElement {
     if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
+    if (this.activePointerId !== null) {
+      return;
+    }
 
     const target = event.currentTarget as Element | null;
     if (
@@ -233,6 +241,8 @@ export class MarkalCalendarBoard extends LitElement {
     const action: MarkAction = current.includes(this.selectedLegendId)
       ? "remove"
       : "add";
+    this.activePointerId = event.pointerId;
+    this.isTouchPointer = event.pointerType !== "mouse";
     this.dragAction = action;
     this.dragStartDate = date;
     this.dragStartX = event.clientX;
@@ -241,9 +251,38 @@ export class MarkalCalendarBoard extends LitElement {
     globalThis.addEventListener("pointermove", this.handlePointerMove);
     globalThis.addEventListener("pointerup", this.handlePointerUp);
     globalThis.addEventListener("pointercancel", this.handlePointerCancel);
+
+    if (this.isTouchPointer) {
+      this.longPressTimer = globalThis.setTimeout(() => {
+        this.longPressTimer = null;
+        this.enterDragMode();
+      }, MarkalCalendarBoard.LONG_PRESS_MS);
+    }
+  }
+
+  private enterDragMode(): void {
+    if (!this.dragAction || !this.dragStartDate || this.dragMoved) {
+      return;
+    }
+    this.dragMoved = true;
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(10);
+      } catch {
+        // some browsers throw / disallow; ignore
+      }
+    }
+    this.dispatchMarkRange(
+      this.dragStartDate,
+      this.dragStartDate,
+      this.dragAction,
+    );
   }
 
   private handlePointerMove = (event: PointerEvent): void => {
+    if (event.pointerId !== this.activePointerId) {
+      return;
+    }
     if (!this.dragAction || !this.dragStartDate) {
       return;
     }
@@ -251,15 +290,21 @@ export class MarkalCalendarBoard extends LitElement {
     if (!this.dragMoved) {
       const dx = event.clientX - this.dragStartX;
       const dy = event.clientY - this.dragStartY;
-      if (Math.hypot(dx, dy) < MarkalCalendarBoard.DRAG_THRESHOLD_PX) {
+
+      if (this.isTouchPointer) {
+        // While waiting for long-press: any sizeable movement aborts (was scroll).
+        if (
+          Math.hypot(dx, dy) > MarkalCalendarBoard.TAP_CANCEL_PX
+        ) {
+          this.cleanupDrag();
+        }
         return;
       }
-      this.dragMoved = true;
-      this.dispatchMarkRange(
-        this.dragStartDate,
-        this.dragStartDate,
-        this.dragAction,
-      );
+
+      if (Math.hypot(dx, dy) < MarkalCalendarBoard.MOUSE_DRAG_PX) {
+        return;
+      }
+      this.enterDragMode();
     }
 
     const root = this.shadowRoot;
@@ -283,7 +328,10 @@ export class MarkalCalendarBoard extends LitElement {
     this.dispatchMarkRange(this.dragStartDate, date, this.dragAction);
   };
 
-  private handlePointerUp = (): void => {
+  private handlePointerUp = (event: PointerEvent): void => {
+    if (event.pointerId !== this.activePointerId) {
+      return;
+    }
     if (this.dragAction && this.dragStartDate && !this.dragMoved) {
       this.dispatchMarkRange(
         this.dragStartDate,
@@ -294,7 +342,10 @@ export class MarkalCalendarBoard extends LitElement {
     this.cleanupDrag();
   };
 
-  private handlePointerCancel = (): void => {
+  private handlePointerCancel = (event?: PointerEvent): void => {
+    if (event && event.pointerId !== this.activePointerId) {
+      return;
+    }
     this.cleanupDrag();
   };
 
@@ -316,6 +367,12 @@ export class MarkalCalendarBoard extends LitElement {
   }
 
   private cleanupDrag(): void {
+    if (this.longPressTimer !== null) {
+      clearTimeout(this.longPressTimer);
+      this.longPressTimer = null;
+    }
+    this.activePointerId = null;
+    this.isTouchPointer = false;
     this.dragAction = null;
     this.dragStartDate = null;
     this.dragMoved = false;

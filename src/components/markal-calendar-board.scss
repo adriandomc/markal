@@ -88,7 +88,7 @@
   isolation: isolate;
   padding: 0;
   text-align: center;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
   transition:
     border-color 150ms ease,
     transform 150ms ease,
