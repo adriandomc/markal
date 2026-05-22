@@ -467,6 +467,9 @@ export class MarkalApp extends LitElement {
             </div>
           </div>
         </div>
+        <div class="info-modal-footer">
+          <p style="text-align:center">Creado por <a href="https://adriandomc.com" target="_blank">Adrián Domínguez Casasola</a></p>
+        </div>
       </div>
     `;
   }
