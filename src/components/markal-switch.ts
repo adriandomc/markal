@@ -1,8 +1,8 @@
 import { html, LitElement } from "lit";
-import switchStyles from "./coolcal-switch.scss?inline";
+import switchStyles from "./markal-switch.scss?inline";
 import { localStyles } from "../lib/lit-styles.ts";
 
-export class CoolcalSwitch extends LitElement {
+export class MarkalSwitch extends LitElement {
   static properties = {
     checked: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
@@ -46,4 +46,4 @@ export class CoolcalSwitch extends LitElement {
   };
 }
 
-customElements.define("coolcal-switch", CoolcalSwitch);
+customElements.define("markal-switch", MarkalSwitch);

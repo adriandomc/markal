@@ -1,4 +1,4 @@
-app = "coolcal"
+app = "markal"
 primary_region = "gru"
 
 [build]

@@ -1,7 +1,7 @@
 import { html, LitElement, nothing } from "lit";
 import appStyles from "./app.scss?inline";
 import "./components/calendar-board.ts";
-import "./components/coolcal-switch.ts";
+import "./components/markal-switch.ts";
 import "./components/date-range-control.ts";
 import "./components/legend-panel.ts";
 import type { DayMarkDetail } from "./components/calendar-board.ts";
@@ -32,14 +32,15 @@ import {
   saveCalendarCollection,
 } from "./lib/storage.ts";
 
-const SIDEBAR_STORAGE_KEY = "coolcal.sidebar.open";
-const LEGACY_SIDEBAR_KEY = "coolcal.sidebar.collapsed";
+const SIDEBAR_STORAGE_KEY = "markal.sidebar.open";
+const LEGACY_SIDEBAR_OPEN_KEY = "coolcal.sidebar.open";
+const LEGACY_SIDEBAR_COLLAPSED_KEY = "coolcal.sidebar.collapsed";
 const MOBILE_QUERY = "(max-width: 980px)";
 const APP_VERSION = "0.1.0";
-const REPO_URL = "https://github.com/adriandomc/coolcal";
+const REPO_URL = "https://github.com/adriandomc/markal";
 const CHANGELOG_URL = `${REPO_URL}/releases`;
 
-export class CoolcalApp extends LitElement {
+export class MarkalApp extends LitElement {
   static properties = {
     collection: { state: true },
     selectedLegendId: { state: true },
@@ -76,11 +77,18 @@ export class CoolcalApp extends LitElement {
         return current === "true";
       }
 
-      const legacy = localStorage.getItem(LEGACY_SIDEBAR_KEY);
-      if (legacy !== null) {
-        const open = legacy !== "true";
+      const legacyOpen = localStorage.getItem(LEGACY_SIDEBAR_OPEN_KEY);
+      if (legacyOpen !== null) {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, legacyOpen);
+        localStorage.removeItem(LEGACY_SIDEBAR_OPEN_KEY);
+        return legacyOpen === "true";
+      }
+
+      const legacyCollapsed = localStorage.getItem(LEGACY_SIDEBAR_COLLAPSED_KEY);
+      if (legacyCollapsed !== null) {
+        const open = legacyCollapsed !== "true";
         localStorage.setItem(SIDEBAR_STORAGE_KEY, String(open));
-        localStorage.removeItem(LEGACY_SIDEBAR_KEY);
+        localStorage.removeItem(LEGACY_SIDEBAR_COLLAPSED_KEY);
         return open;
       }
     } catch {
@@ -361,12 +369,12 @@ export class CoolcalApp extends LitElement {
                 adyacentes.
               </span>
             </div>
-            <coolcal-switch
+            <markal-switch
               ?checked="${settings.showOutMonthMarks}"
               label="Mostrar marcas de otros meses"
               @change="${(event: CustomEvent<boolean>) =>
                 this.updateSettings({ showOutMonthMarks: event.detail })}"
-            ></coolcal-switch>
+            ></markal-switch>
           </div>
           <div class="settings-row settings-row-stacked">
             <div class="settings-row-text">
@@ -411,14 +419,14 @@ export class CoolcalApp extends LitElement {
       <div
         class="${`info-modal${this.infoOpen ? " open" : ""}`}"
         role="dialog"
-        aria-label="Información de CoolCal"
+        aria-label="Información de Markal"
         aria-modal="${String(this.infoOpen)}"
         aria-hidden="${String(!this.infoOpen)}"
         tabindex="-1"
         ?inert="${!this.infoOpen}"
       >
         <header class="info-modal-header">
-          <span class="info-modal-title">Acerca de CoolCal</span>
+          <span class="info-modal-title">Acerca de Markal</span>
           <button
             class="icon-button"
             type="button"
@@ -430,7 +438,7 @@ export class CoolcalApp extends LitElement {
         </header>
         <div class="info-modal-body">
           <p class="info-description">
-            CoolCal es una herramienta para crear calendarios marcables. Sólo tienes
+            Markal es una herramienta para crear calendarios marcables. Sólo tienes
             que definir un rango de fechas, definir el color de la leyenda y ¡comenzar
             a marcar tu calendario!
           </p>
@@ -551,7 +559,7 @@ export class CoolcalApp extends LitElement {
       }`}" aria-hidden="${String(!this.sidebarOpen)}">
         <h1 class="brand">
           <i class="ph ph-calendar-dots"></i>
-          CoolCal
+          Markal
         </h1>
         <div class="sidebar-section-title">
           <span>Calendarios</span>
@@ -885,4 +893,4 @@ export class CoolcalApp extends LitElement {
   };
 }
 
-customElements.define("coolcal-app", CoolcalApp);
+customElements.define("markal-app", MarkalApp);

@@ -2,10 +2,20 @@ import type { CalendarCollection, CalendarDocument } from "../types.ts";
 import { createCalendarDocument, DEFAULT_SETTINGS } from "./calendar-doc.ts";
 import { clampMaxMarksPerDay } from "./marks.ts";
 
-const STORAGE_KEY = "coolcal.collection.v1";
+const STORAGE_KEY = "markal.collection.v1";
+const LEGACY_STORAGE_KEY = "coolcal.collection.v1";
 
 export function loadCalendarCollection(): CalendarCollection {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  let raw = localStorage.getItem(STORAGE_KEY);
+
+  if (!raw) {
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      localStorage.setItem(STORAGE_KEY, legacy);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      raw = legacy;
+    }
+  }
 
   if (raw) {
     try {
