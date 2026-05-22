@@ -8,12 +8,17 @@ import {
   LOCALE_OPTIONS,
   type LocaleCode,
 } from "./i18n/setup.ts";
-import "./components/calendar-board.ts";
+import "./components/markal-calendar-board.ts";
+import "./components/markal-calendar-item.ts";
+import "./components/markal-icon-button.ts";
+import "./components/markal-modal.ts";
+import "./components/markal-radio-group.ts";
+import "./components/markal-settings-row.ts";
 import "./components/markal-switch.ts";
-import "./components/date-range-control.ts";
-import "./components/legend-panel.ts";
-import type { DayMarkDetail } from "./components/calendar-board.ts";
-import type { LegendChangeDetail } from "./components/legend-panel.ts";
+import "./components/markal-date-range-control.ts";
+import "./components/markal-legend-panel.ts";
+import type { DayMarkDetail } from "./components/markal-calendar-board.ts";
+import type { LegendChangeDetail } from "./components/markal-legend-panel.ts";
 import type {
   CalendarCollection,
   CalendarDocument,
@@ -196,51 +201,33 @@ export class MarkalApp extends LitElement {
   };
 
   private openInfo = (): void => {
-    this.captureFocus();
     this.infoOpen = true;
   };
 
   private closeInfo = (): void => {
     this.infoOpen = false;
-    this.restoreFocus();
   };
 
   private openSettings = (): void => {
-    this.captureFocus();
     this.settingsOpen = true;
   };
 
   private closeSettings = (): void => {
     this.settingsOpen = false;
-    this.restoreFocus();
   };
 
   private openExport = (): void => {
-    this.captureFocus();
     this.exportMessage = "";
     this.exportOpen = true;
   };
 
   private closeExport = (): void => {
     this.exportOpen = false;
-    this.restoreFocus();
   };
 
   protected updated(changed: Map<string, unknown>): void {
-    if (changed.has("infoOpen") && this.infoOpen) {
-      this.focusDialog(".info-modal.open");
-    }
-
     if (changed.has("legendSheetOpen") && this.legendSheetOpen) {
       this.focusDialog(".legend-sheet.open");
-    }
-
-    if (changed.has("settingsOpen") && this.settingsOpen) {
-      this.focusDialog(".settings-modal.open");
-    }
-
-    if (changed.has("exportOpen") && this.exportOpen) {
-      this.focusDialog(".export-modal.open");
     }
   }
 
@@ -321,9 +308,7 @@ export class MarkalApp extends LitElement {
         aria-label="${msg("Acciones rápidas")}"
       >
         <button
-          class="${`quick-button quick-toggle${
-            this.sidebarOpen ? " is-open" : ""
-          }`}"
+          class="${`quick-toggle${this.sidebarOpen ? " is-open" : ""}`}"
           type="button"
           aria-label="${this.sidebarOpen
             ? msg("Cerrar menú")
@@ -333,65 +318,59 @@ export class MarkalApp extends LitElement {
         >
           <i class="${this.sidebarOpen ? "ph ph-x" : "ph ph-list"}"></i>
         </button>
-        <button
-          class="quick-button"
-          type="button"
-          aria-label="${msg("Exportar")}"
-          title="${msg("Exportar")}"
+        <markal-icon-button
+          icon="export"
+          label="${msg("Exportar")}"
+          size="lg"
+          variant="strong"
           aria-hidden="${String(this.sidebarOpen)}"
           ?inert="${this.sidebarOpen}"
           @click="${this.openExport}"
-        >
-          <i class="ph ph-export"></i>
-        </button>
-        <button
-          class="quick-button"
-          type="button"
-          aria-label="${msg("Configuración")}"
-          title="${msg("Configuración")}"
+        ></markal-icon-button>
+        <markal-icon-button
+          icon="gear-six"
+          label="${msg("Configuración")}"
+          size="lg"
+          variant="strong"
           aria-hidden="${String(this.sidebarOpen)}"
           ?inert="${this.sidebarOpen}"
           @click="${this.openSettings}"
-        >
-          <i class="ph ph-gear-six"></i>
-        </button>
-        <button
-          class="quick-button"
-          type="button"
-          aria-label="${msg("Información")}"
-          title="${msg("Información")}"
+        ></markal-icon-button>
+        <markal-icon-button
+          icon="info"
+          label="${msg("Información")}"
+          size="lg"
+          variant="strong"
           aria-hidden="${String(this.sidebarOpen)}"
           ?inert="${this.sidebarOpen}"
           @click="${this.openInfo}"
-        >
-          <i class="ph ph-info"></i>
-        </button>
+        ></markal-icon-button>
       </nav>
       <main class="app-shell">
         ${this.renderSidebar()}
         <div class="main-pane">
           <section class="range-row">
-            <date-range-control
+            <markal-date-range-control
               .range="${document.dateRange}"
               @range-change="${this.changeRange}"
-            ></date-range-control>
+            ></markal-date-range-control>
           </section>
 
           <section class="workspace">
-            <calendar-board
+            <markal-calendar-board
               .document="${document}"
               .selectedLegendId="${this.selectedLegendId}"
               @day-mark="${this.markDay}"
-            ></calendar-board>
+            ></markal-calendar-board>
             ${this.isMobile ? nothing : html`
-              <legend-panel
+              <markal-legend-panel
                 .legends="${document.legends}"
                 .selectedLegendId="${this.selectedLegendId}"
                 @legend-select="${this.selectLegend}"
                 @legend-change="${this.changeLegend}"
                 @legend-add="${this.addLegend}"
                 @legend-remove="${this.removeLegend}"
-              ></legend-panel>
+              ></markal-legend-panel>
             `}
           </section>
         </div>
@@ -405,56 +384,35 @@ export class MarkalApp extends LitElement {
 
   private renderExportModal() {
     return html`
-      <div
-        class="${`export-backdrop${this.exportOpen ? " visible" : ""}`}"
-        @click="${this.closeExport}"
+      <markal-modal
+        ?open="${this.exportOpen}"
+        label="${msg("Exportar calendario")}"
+        size="sm"
+        @markal-close="${this.closeExport}"
       >
-      </div>
-      <div
-        class="${`export-modal${this.exportOpen ? " open" : ""}`}"
-        role="dialog"
-        aria-label="${msg("Exportar calendario")}"
-        aria-modal="${String(this.exportOpen)}"
-        aria-hidden="${String(!this.exportOpen)}"
-        tabindex="-1"
-        ?inert="${!this.exportOpen}"
-      >
-        <header class="export-modal-header">
-          <span class="export-modal-title">${msg("Exportar calendario")}</span>
+        <p class="export-modal-hint">
+          ${msg("Elige el formato en el que quieres descargar tu calendario.")}
+        </p>
+        <div class="export-actions">
           <button
-            class="icon-button"
+            class="action-button"
             type="button"
-            aria-label="${msg("Cerrar")}"
-            @click="${this.closeExport}"
+            @click="${() => this.exportCalendar("png")}"
           >
-            <i class="ph ph-x"></i>
+            <i class="ph ph-file-png"></i>
+            PNG
           </button>
-        </header>
-        <div class="export-modal-body">
-          <p class="export-modal-hint">
-            ${msg("Elige el formato en el que quieres descargar tu calendario.")}
-          </p>
-          <div class="export-actions">
-            <button
-              class="action-button"
-              type="button"
-              @click="${() => this.exportCalendar("png")}"
-            >
-              <i class="ph ph-file-png"></i>
-              PNG
-            </button>
-            <button
-              class="action-button"
-              type="button"
-              @click="${() => this.exportCalendar("pdf")}"
-            >
-              <i class="ph ph-file-pdf"></i>
-              PDF
-            </button>
-          </div>
-          <div class="export-status" role="status">${this.exportMessage}</div>
+          <button
+            class="action-button"
+            type="button"
+            @click="${() => this.exportCalendar("pdf")}"
+          >
+            <i class="ph ph-file-pdf"></i>
+            PDF
+          </button>
         </div>
-      </div>
+        <div class="export-status" role="status">${this.exportMessage}</div>
+      </markal-modal>
     `;
   }
 
@@ -466,176 +424,106 @@ export class MarkalApp extends LitElement {
     );
 
     return html`
-      <div
-        class="${`settings-backdrop${this.settingsOpen ? " visible" : ""}`}"
-        @click="${this.closeSettings}"
+      <markal-modal
+        ?open="${this.settingsOpen}"
+        label="${msg("Configuración")}"
+        size="lg"
+        @markal-close="${this.closeSettings}"
       >
-      </div>
-      <div
-        class="${`settings-modal${this.settingsOpen ? " open" : ""}`}"
-        role="dialog"
-        aria-label="${msg("Configuración")}"
-        aria-modal="${String(this.settingsOpen)}"
-        aria-hidden="${String(!this.settingsOpen)}"
-        tabindex="-1"
-        ?inert="${!this.settingsOpen}"
-      >
-        <header class="settings-modal-header">
-          <span class="settings-modal-title">${msg("Configuración")}</span>
-          <button
-            class="icon-button"
-            type="button"
-            aria-label="${msg("Cerrar")}"
-            @click="${this.closeSettings}"
-          >
-            <i class="ph ph-x"></i>
-          </button>
-        </header>
-        <div class="settings-modal-body">
-          <div class="settings-row">
-            <div class="settings-row-text">
-              <span class="settings-row-title">
-                ${msg("Mostrar marcas de otros meses")}
-              </span>
-              <span class="settings-row-help">
-                ${msg(
-                  "Visualiza las marcas en los días que se asoman desde meses adyacentes.",
-                )}
-              </span>
-            </div>
-            <markal-switch
-              ?checked="${settings.showOutMonthMarks}"
-              label="${msg("Mostrar marcas de otros meses")}"
-              @change="${(event: CustomEvent<boolean>) =>
-                this.updateSettings({ showOutMonthMarks: event.detail })}"
-            ></markal-switch>
-          </div>
-          <div class="settings-row settings-row-stacked">
-            <div class="settings-row-text">
-              <span class="settings-row-title">${msg("Leyendas por día")}</span>
-              <span class="settings-row-help">
-                ${msg(
-                  "Máximo de leyendas que puedes apilar en una misma fecha.",
-                )}
-              </span>
-            </div>
-            <div
-              class="settings-options"
-              role="radiogroup"
-              aria-label="${msg("Leyendas por día")}"
-            >
-              ${options.map((value) =>
-                html`
-                  <button
-                    class="${`settings-option${
-                      settings.maxMarksPerDay === value ? " selected" : ""
-                    }`}"
-                    type="button"
-                    role="radio"
-                    aria-checked="${String(settings.maxMarksPerDay === value)}"
-                    @click="${() =>
-                      this.updateSettings({ maxMarksPerDay: value })}"
-                  >${value}</button>
-                `
-              )}
-            </div>
-          </div>
-          ${this.renderLanguageRow()}
-        </div>
-      </div>
+        <markal-settings-row
+          rowTitle="${msg("Mostrar marcas de otros meses")}"
+          helpText="${msg(
+            "Visualiza las marcas en los días que se asoman desde meses adyacentes.",
+          )}"
+        >
+          <markal-switch
+            ?checked="${settings.showOutMonthMarks}"
+            label="${msg("Mostrar marcas de otros meses")}"
+            @change="${(event: CustomEvent<boolean>) =>
+              this.updateSettings({ showOutMonthMarks: event.detail })}"
+          ></markal-switch>
+        </markal-settings-row>
+        <markal-settings-row
+          stacked
+          rowTitle="${msg("Leyendas por día")}"
+          helpText="${msg(
+            "Máximo de leyendas que puedes apilar en una misma fecha.",
+          )}"
+        >
+          <markal-radio-group
+            .options="${options.map((value) => ({
+              value,
+              label: String(value),
+            }))}"
+            .value="${settings.maxMarksPerDay}"
+            groupLabel="${msg("Leyendas por día")}"
+            @markal-change="${(event: CustomEvent<number>) =>
+              this.updateSettings({ maxMarksPerDay: event.detail })}"
+          ></markal-radio-group>
+        </markal-settings-row>
+        ${this.renderLanguageRow()}
+      </markal-modal>
     `;
   }
 
   private renderLanguageRow() {
     return html`
-      <div class="settings-row settings-row-stacked">
-        <div class="settings-row-text">
-          <span class="settings-row-title">${msg("Idioma")}</span>
-          <span class="settings-row-help">
-            ${msg("Selecciona el idioma de la interfaz.")}
-          </span>
-        </div>
-        <div
-          class="settings-options"
-          role="radiogroup"
-          aria-label="${msg("Idioma")}"
-        >
-          ${LOCALE_OPTIONS.map((option) => {
-            const selected = this.currentLocale === option.code;
-            return html`
-              <button
-                class="${`settings-option${selected ? " selected" : ""}`}"
-                type="button"
-                role="radio"
-                aria-checked="${String(selected)}"
-                @click="${() => this.changeLocale(option.code)}"
-              >${option.label}</button>
-            `;
-          })}
-        </div>
-      </div>
+      <markal-settings-row
+        stacked
+        rowTitle="${msg("Idioma")}"
+        helpText="${msg("Selecciona el idioma de la interfaz.")}"
+      >
+        <markal-radio-group
+          .options="${LOCALE_OPTIONS.map((option) => ({
+            value: option.code,
+            label: option.label,
+          }))}"
+          .value="${this.currentLocale}"
+          groupLabel="${msg("Idioma")}"
+          @markal-change="${(event: CustomEvent<string>) =>
+            this.changeLocale(event.detail as LocaleCode)}"
+        ></markal-radio-group>
+      </markal-settings-row>
     `;
   }
 
   private renderInfoModal() {
     return html`
-      <div
-        class="${`info-backdrop${this.infoOpen ? " visible" : ""}`}"
-        @click="${this.closeInfo}"
+      <markal-modal
+        ?open="${this.infoOpen}"
+        label="${msg("Acerca de Markal")}"
+        @markal-close="${this.closeInfo}"
       >
-      </div>
-      <div
-        class="${`info-modal${this.infoOpen ? " open" : ""}`}"
-        role="dialog"
-        aria-label="${msg("Información de Markal")}"
-        aria-modal="${String(this.infoOpen)}"
-        aria-hidden="${String(!this.infoOpen)}"
-        tabindex="-1"
-        ?inert="${!this.infoOpen}"
-      >
-        <header class="info-modal-header">
-          <span class="info-modal-title">${msg("Acerca de Markal")}</span>
-          <button
-            class="icon-button"
-            type="button"
-            aria-label="${msg("Cerrar")}"
-            @click="${this.closeInfo}"
-          >
-            <i class="ph ph-x"></i>
-          </button>
-        </header>
-        <div class="info-modal-body">
-          <p class="info-description">
-            ${msg(
-              "Markal es una herramienta para crear calendarios marcables. Sólo tienes que definir un rango de fechas, definir el color de la leyenda y ¡comenzar a marcar tu calendario!",
-            )}
-          </p>
-          <div class="info-meta">
-            <div class="info-meta-row">
-              <span class="info-meta-label">${msg("Versión")}</span>
-              <span class="info-meta-value">${APP_VERSION}</span>
-            </div>
-            <div class="info-meta-row">
-              <span class="info-meta-label">${msg("Repositorio")}</span>
-              <a
-                class="info-link"
-                href="${REPO_URL}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >GitHub</a>
-            </div>
-            <div class="info-meta-row">
-              <span class="info-meta-label">${msg("Changelog")}</span>
-              <a
-                class="info-link"
-                href="${CHANGELOG_URL}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >Releases</a>
-            </div>
+        <p class="info-description">
+          ${msg(
+            "Markal es una herramienta para crear calendarios marcables. Sólo tienes que definir un rango de fechas, definir el color de la leyenda y ¡comenzar a marcar tu calendario!",
+          )}
+        </p>
+        <div class="info-meta">
+          <div class="info-meta-row">
+            <span class="info-meta-label">${msg("Versión")}</span>
+            <span class="info-meta-value">${APP_VERSION}</span>
+          </div>
+          <div class="info-meta-row">
+            <span class="info-meta-label">${msg("Repositorio")}</span>
+            <a
+              class="info-link"
+              href="${REPO_URL}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >GitHub</a>
+          </div>
+          <div class="info-meta-row">
+            <span class="info-meta-label">${msg("Changelog")}</span>
+            <a
+              class="info-link"
+              href="${CHANGELOG_URL}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >Releases</a>
           </div>
         </div>
-        <div class="info-modal-footer">
+        <div slot="footer" class="info-modal-footer">
           <p style="text-align:center">
             ${msg(
               html`Creado por
@@ -645,7 +533,7 @@ export class MarkalApp extends LitElement {
             )}
           </p>
         </div>
-      </div>
+      </markal-modal>
     `;
   }
 
@@ -705,17 +593,14 @@ export class MarkalApp extends LitElement {
         >
           <header class="legend-sheet-header">
             <span class="legend-sheet-title">${msg("Leyendas")}</span>
-            <button
-              class="icon-button"
-              type="button"
-              aria-label="${msg("Cerrar")}"
+            <markal-icon-button
+              icon="x"
+              label="${msg("Cerrar")}"
               @click="${this.closeLegendSheet}"
-            >
-              <i class="ph ph-x"></i>
-            </button>
+            ></markal-icon-button>
           </header>
           <div class="legend-sheet-body">
-            <legend-panel
+            <markal-legend-panel
               embedded
               .legends="${legends}"
               .selectedLegendId="${this.selectedLegendId}"
@@ -723,7 +608,7 @@ export class MarkalApp extends LitElement {
               @legend-change="${this.changeLegend}"
               @legend-add="${this.addLegend}"
               @legend-remove="${this.removeLegend}"
-            ></legend-panel>
+            ></markal-legend-panel>
           </div>
         </div>
       </div>
@@ -741,14 +626,11 @@ export class MarkalApp extends LitElement {
         </h1>
         <div class="sidebar-section-title">
           <span>${msg("Calendarios")}</span>
-          <button
-            class="icon-button"
-            type="button"
-            aria-label="${msg("Nuevo calendario")}"
+          <markal-icon-button
+            icon="plus"
+            label="${msg("Nuevo calendario")}"
             @click="${this.createCalendar}"
-          >
-            <i class="ph ph-plus"></i>
-          </button>
+          ></markal-icon-button>
         </div>
         <div class="calendar-list">
           ${this.collection.documents.map((calendar) =>
@@ -762,42 +644,16 @@ export class MarkalApp extends LitElement {
   private renderCalendarItem(calendar: CalendarDocument) {
     const selected = calendar.id === this.collection.selectedId;
     return html`
-      <article class="${selected
-        ? "calendar-item selected"
-        : "calendar-item"}" @click="${() =>
-        this.selectCalendarById(calendar.id)}">
-        <input
-          class="calendar-name"
-          type="text"
-          aria-label="${msg("Nombre del calendario")}"
-          .value="${calendar.title}"
-          @focus="${() => this.selectCalendarById(calendar.id)}"
-          @input="${(event: InputEvent) =>
-            this.renameCalendarById(
-              calendar.id,
-              (event.target as HTMLInputElement).value,
-            )}"
-        />
-        <button
-          class="icon-button"
-          type="button"
-          aria-label="${msg("Duplicar calendario")}"
-          @click="${(event: Event) =>
-            this.duplicateCalendarById(event, calendar.id)}"
-        >
-          <i class="ph ph-copy"></i>
-        </button>
-        <button
-          class="icon-button"
-          type="button"
-          aria-label="${msg("Eliminar calendario")}"
-          ?disabled="${this.collection.documents.length <= 1}"
-          @click="${(event: Event) =>
-            this.deleteCalendarById(event, calendar.id)}"
-        >
-          <i class="ph ph-trash"></i>
-        </button>
-      </article>
+      <markal-calendar-item
+        .name="${calendar.title}"
+        ?selected="${selected}"
+        .canDelete="${this.collection.documents.length > 1}"
+        @markal-select="${() => this.selectCalendarById(calendar.id)}"
+        @markal-rename="${(event: CustomEvent<string>) =>
+          this.renameCalendarById(calendar.id, event.detail)}"
+        @markal-duplicate="${() => this.duplicateCalendarFromEvent(calendar.id)}"
+        @markal-delete="${() => this.deleteCalendarFromEvent(calendar.id)}"
+      ></markal-calendar-item>
     `;
   }
 
@@ -859,8 +715,7 @@ export class MarkalApp extends LitElement {
     });
   };
 
-  private duplicateCalendarById(event: Event, id: string): void {
-    event.stopPropagation();
+  private duplicateCalendarFromEvent(id: string): void {
     const source = this.collection.documents.find((document) =>
       document.id === id
     );
@@ -880,8 +735,7 @@ export class MarkalApp extends LitElement {
     });
   }
 
-  private deleteCalendarById(event: Event, id: string): void {
-    event.stopPropagation();
+  private deleteCalendarFromEvent(id: string): void {
     if (this.collection.documents.length <= 1) {
       return;
     }
