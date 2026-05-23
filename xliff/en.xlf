@@ -227,6 +227,50 @@
   <source>Elige el formato en el que quieres descargar tu calendario.</source>
   <target>Choose the format to download your calendar.</target>
 </trans-unit>
+<trans-unit id="sd4fcf36449697b96">
+  <source>Cargando…</source>
+  <target>Loading…</target>
+</trans-unit>
+<trans-unit id="s05a687d5aae2c66e">
+  <source>Compartir calendario</source>
+  <target>Share calendar</target>
+</trans-unit>
+<trans-unit id="se4bcf1f368963253">
+  <source>Cualquiera con este enlace podrá ver y editar este calendario en tiempo real. Tus otros calendarios no se comparten.</source>
+  <target>Anyone with this link can view and edit this calendar in real time. Your other calendars stay private.</target>
+</trans-unit>
+<trans-unit id="s7e59063e29ef1386">
+  <source>Enlace para compartir</source>
+  <target>Share link</target>
+</trans-unit>
+<trans-unit id="s03f03b2b3a5803fa">
+  <source>Copiado</source>
+  <target>Copied</target>
+</trans-unit>
+<trans-unit id="sf4ec5dfbfad68a07">
+  <source>Copiar</source>
+  <target>Copy</target>
+</trans-unit>
+<trans-unit id="s16441f15007a3e80">
+  <source>Enlace copiado</source>
+  <target>Link copied</target>
+</trans-unit>
+<trans-unit id="s7b433445eea68c83">
+  <source>El cifrado de extremo a extremo viaja en el fragmento (#) del enlace, que no llega a ningún servidor.</source>
+  <target>The end-to-end encryption key lives in the link's fragment (#), which never reaches any server.</target>
+</trans-unit>
+<trans-unit id="sfc3583ce6e782be5">
+  <source>Dejar de compartir</source>
+  <target>Stop sharing</target>
+</trans-unit>
+<trans-unit id="s348d2f025e429678">
+  <source>Compartiendo</source>
+  <target>Sharing</target>
+</trans-unit>
+<trans-unit id="sf6369feef613aeb8">
+  <source>Compartir</source>
+  <target>Share</target>
+</trans-unit>
 </body>
 </file>
 </xliff>
