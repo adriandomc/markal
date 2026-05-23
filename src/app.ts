@@ -1219,6 +1219,32 @@ export class MarkalApp extends LitElement {
             "Markal es una herramienta para crear calendarios marcables. Sólo tienes que definir un rango de fechas, definir el color de la leyenda y ¡comenzar a marcar tu calendario!",
           )}
         </p>
+        <section class="info-privacy">
+          <h3 class="info-privacy-title">
+            <i class="ph ph-key"></i>
+            ${msg("Privacidad y seguridad")}
+          </h3>
+          <ul class="info-privacy-list">
+            <li>
+              ${msg(
+                "Tus calendarios viven solo en tu navegador. Markal no tiene servidores que los almacenen.",
+              )}
+            </li>
+            <li>
+              ${msg(
+                "Compartir un calendario cifra los datos extremo a extremo (AES-GCM-256). La clave viaja en el fragmento (#) del enlace, que nunca llega a un servidor.",
+              )}
+            </li>
+            <li>
+              ${msg(
+                "El respaldo en Google Drive (opcional) viaja cifrado con tu contraseña. Markal no puede leer el contenido.",
+              )}
+            </li>
+          </ul>
+          <a class="info-privacy-link" href="/privacy">
+            ${msg("Leer política completa →")}
+          </a>
+        </section>
         <div class="info-meta">
           <div class="info-meta-row">
             <span class="info-meta-label">${msg("Versión")}</span>
@@ -1241,12 +1267,6 @@ export class MarkalApp extends LitElement {
               target="_blank"
               rel="noopener noreferrer"
             >Releases</a>
-          </div>
-          <div class="info-meta-row">
-            <span class="info-meta-label">${msg("Privacidad")}</span>
-            <a class="info-link" href="/privacy">
-              ${msg("Ver política de privacidad")}
-            </a>
           </div>
         </div>
         <div slot="footer" class="info-modal-footer">
