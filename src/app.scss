@@ -119,6 +119,14 @@
   @include action-button;
 }
 
+.app-loading {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 .export-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
