@@ -1,16 +1,26 @@
 # Markal signaling server
 
-Minimal WebSocket pub/sub broker for [`y-webrtc`](https://github.com/yjs/y-webrtc).
-Speaks the y-webrtc signaling protocol (`subscribe` / `unsubscribe` /
-`publish` / `ping`). State is in-memory only; no logs of content.
+Two responsibilities in one tiny Deno service:
+
+1. **WebSocket pub/sub broker** for [`y-webrtc`](https://github.com/yjs/y-webrtc).
+   Speaks the y-webrtc signaling protocol (`subscribe` / `unsubscribe` /
+   `publish` / `ping`). State is in-memory only; no logs of content.
+2. **OAuth token-exchange proxy** for the Google Drive backup feature.
+   Google's "Web Application" client type requires `client_secret` for the
+   PKCE code exchange — which is not safe to ship in the SPA bundle. This
+   server holds the secret as an env var and forwards the exchange request
+   on behalf of the client. The proxy is stateless and never logs tokens.
 
 ## What it sees, what it doesn't
 
-- **Sees**: opaque `topic` strings (random room IDs) and the IPs needed for
-  WebRTC peer hole-punching.
-- **Doesn't see**: any calendar data. WebRTC payloads are end-to-end encrypted
-  (DTLS-SRTP) plus an extra app-layer AES-GCM in Markal, both keyed off material
-  that never reaches this server. `publish` messages pass through verbatim.
+- **WebSocket leg**: opaque `topic` strings (random room IDs) and IPs for
+  WebRTC peer hole-punching. WebRTC payloads are end-to-end encrypted
+  (DTLS-SRTP) plus an extra app-layer AES-GCM, both keyed off material that
+  never reaches this server. `publish` messages pass through verbatim.
+- **OAuth leg**: briefly sees the user's authorization code in transit, and
+  the access/refresh tokens in Google's response on their way back to the
+  user's browser. Nothing is persisted. The operator has the same trust
+  posture as for any other piece of their infrastructure.
 
 ## Local dev
 
@@ -44,6 +54,12 @@ that hosts the Markal app, using `server/signaling/Dockerfile`.
    - `MARKAL_ALLOWED_ORIGINS` = your Markal prod origin (e.g. `https://markal.app`).
      Use a comma-separated list if you serve multiple domains.
    - `MARKAL_MAX_MSG_PER_SEC` *(optional)* — default `60`.
+   - `GOOGLE_CLIENT_ID` = the same OAuth client_id the SPA uses
+     (`PUBLIC_MARKAL_GOOGLE_CLIENT_ID`). Required for the Drive backup proxy
+     routes; if unset, those routes return `503 oauth_not_configured`.
+   - `GOOGLE_CLIENT_SECRET` = the client_secret from the Google Cloud OAuth
+     client (Credentials → Web Application → Client secret). Server-side only;
+     never expose it on the client.
 8. **Resources**: 256MB RAM / 0.1 vCPU is plenty for the signaling workload;
    no persistent storage needed.
 9. **Deploy**.
@@ -73,8 +89,21 @@ signaling volume.
 | Env var | Default | Purpose |
 |---|---|---|
 | `PORT` | `8080` | Listen port (Deno Deploy sets this automatically). |
-| `MARKAL_ALLOWED_ORIGINS` | (unset) | Comma-separated allowlist of `Origin` headers. Unset = permissive. |
+| `MARKAL_ALLOWED_ORIGINS` | (unset) | Comma-separated allowlist of `Origin` headers. Applied to both WebSocket upgrades and OAuth proxy routes. Unset = permissive. |
 | `MARKAL_MAX_MSG_PER_SEC` | `60` | Per-connection message rate limit. Exceeding closes the socket with code 1008. |
+| `GOOGLE_CLIENT_ID` | (unset) | Google OAuth client_id. Required for the `/oauth/google/*` routes. |
+| `GOOGLE_CLIENT_SECRET` | (unset) | Google OAuth client_secret. Server-side only. |
+
+## HTTP routes (in addition to the WebSocket upgrade)
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/oauth/google/token` | Exchange a PKCE authorization code for tokens. Body: `{ code, code_verifier, redirect_uri }`. Adds `client_secret` server-side. |
+| POST | `/oauth/google/refresh` | Refresh an expired access token. Body: `{ refresh_token }`. |
+| OPTIONS | `/oauth/google/*` | CORS preflight. |
+
+All other paths return `426 Upgrade Required` (this service is otherwise
+WebSocket-only).
 
 ## Alternatives
 
