@@ -47,7 +47,9 @@ function detectInitialLocale(): LocaleCode {
 
 function syncHtmlLang(): void {
   if (typeof document !== "undefined") {
-    document.documentElement.lang = getLocale();
+    const locale = getLocale();
+    document.documentElement.lang = locale;
+    document.documentElement.setAttribute("data-locale", locale);
   }
 }
 
