@@ -9,11 +9,13 @@ export class MarkalCalendarItem extends LitElement {
     name: { type: String },
     selected: { type: Boolean, reflect: true },
     canDelete: { type: Boolean },
+    shared: { type: Boolean, reflect: true },
   };
 
   name = "";
   selected = false;
   canDelete = true;
+  shared = false;
 
   constructor() {
     super();
@@ -34,6 +36,12 @@ export class MarkalCalendarItem extends LitElement {
         @input="${this.handleInput}"
       />
       <markal-icon-button
+        icon="share-network"
+        size="sm"
+        label="${this.shared ? msg("Compartiendo") : msg("Compartir")}"
+        @click="${this.handleShare}"
+      ></markal-icon-button>
+      <markal-icon-button
         icon="copy"
         size="sm"
         label="${msg("Duplicar calendario")}"
@@ -48,6 +56,13 @@ export class MarkalCalendarItem extends LitElement {
       ></markal-icon-button>
     `;
   }
+
+  private handleShare = (event: Event): void => {
+    event.stopPropagation();
+    this.dispatchEvent(
+      new CustomEvent("markal-share", { bubbles: true, composed: true }),
+    );
+  };
 
   private handleHostClick = (event: Event): void => {
     const target = event.target as Element | null;
