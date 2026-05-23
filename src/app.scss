@@ -370,6 +370,119 @@
   text-align: center;
 }
 
+.backup {
+  display: grid;
+  gap: 1rem;
+}
+
+.backup-block {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.backup-block-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--ink);
+
+  .ph {
+    font-size: 1.1rem;
+    color: var(--muted);
+  }
+}
+
+.backup-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.backup-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.backup-btn {
+  @include action-button;
+  width: 100%;
+  font-size: 0.86rem;
+
+  &.primary {
+    background: var(--ink);
+    color: var(--page);
+    border-color: var(--ink);
+  }
+
+  &.ghost {
+    background: transparent;
+    border-style: dashed;
+  }
+
+  .ph {
+    font-size: 1.05rem;
+  }
+}
+
+.backup-panel {
+  display: grid;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.backup-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.backup-field-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.backup-field-hint {
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.backup-input {
+  @include text-input;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.backup-panel-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.backup-status {
+  margin: 0;
+  padding: 0.5rem 0.625rem;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+  line-height: 1.4;
+
+  &.is-error {
+    background: color-mix(in srgb, #c8201f 12%, var(--surface));
+    color: #c8201f;
+  }
+}
+
 @include mobile {
   :host {
     --sidebar-width: min(20rem, calc(100vw - 2rem));

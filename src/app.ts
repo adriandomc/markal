@@ -42,6 +42,7 @@ import {
 import {
   ensureSharedCalendar,
   getCalendarDoc,
+  getCollectionSnapshot,
   getSelectedDocument,
   getShareInfo,
   initStorage,
@@ -61,6 +62,25 @@ import {
   type ShareLink,
 } from "./lib/sync/share.ts";
 import { connectShared, disconnectShared } from "./lib/sync/webrtc.ts";
+import type { EncryptedEnvelope } from "./lib/cloud/crypto.ts";
+import {
+  applyPlainBackup,
+  decryptAndApplyBackup,
+  downloadBlobAsFile,
+  exportBackupAsBlob,
+  parseBackupText,
+  suggestedBackupFilename,
+} from "./lib/cloud/backup.ts";
+import {
+  completeDriveOAuth,
+  disconnectDrive,
+  isDriveConfigured,
+  isDriveConnected,
+  isOAuthCallbackPath,
+  pullBackupFromDrive,
+  pushBackupToDrive,
+  startDriveOAuth,
+} from "./lib/cloud/drive.ts";
 
 const SIDEBAR_STORAGE_KEY = "markal.sidebar.open";
 const LEGACY_SIDEBAR_OPEN_KEY = "coolcal.sidebar.open";
@@ -85,6 +105,17 @@ export class MarkalApp extends LitElement {
     shareLink: { state: true },
     shareCopied: { state: true },
     loading: { state: true },
+    backupMessage: { state: true },
+    backupError: { state: true },
+    backupBusy: { state: true },
+    exportPanelOpen: { state: true },
+    exportPassphrase: { state: true },
+    pendingImportEnvelope: { state: true },
+    importPassphrase: { state: true },
+    driveConnected: { state: true },
+    driveConfigured: { state: true },
+    drivePassphrase: { state: true },
+    driveLastSync: { state: true },
   };
 
   collection: CalendarCollection | null = null;
@@ -100,6 +131,17 @@ export class MarkalApp extends LitElement {
   shareLink: ShareLink | null = null;
   shareCopied = false;
   loading = true;
+  backupMessage = "";
+  backupError = false;
+  backupBusy: string | null = null;
+  exportPanelOpen = false;
+  exportPassphrase = "";
+  pendingImportEnvelope: EncryptedEnvelope | null = null;
+  importPassphrase = "";
+  driveConnected = false;
+  driveConfigured = false;
+  drivePassphrase = "";
+  driveLastSync: string | null = null;
 
   private mobileQuery: MediaQueryList | null = null;
   private mobileListener: ((event: MediaQueryListEvent) => void) | null = null;
@@ -186,6 +228,16 @@ export class MarkalApp extends LitElement {
 
   private async initStorage(): Promise<void> {
     try {
+      // 0. If we're returning from a Google OAuth redirect, complete the
+      //    handshake and bounce to the original target — no storage work
+      //    needed in this short-lived page.
+      if (await this.maybeHandleOAuthCallback()) {
+        return;
+      }
+
+      this.driveConfigured = isDriveConfigured();
+      this.restoreOAuthFlash();
+
       // 1. Open storage (loads existing calendars, but does NOT auto-seed
       //    a default — we want to give share-landing a chance to populate first).
       await initStorage();
@@ -215,8 +267,53 @@ export class MarkalApp extends LitElement {
         const info = getShareInfo(doc.id);
         if (info) this.connectCalendarSync(doc.id, info);
       }
+
+      // 5. Refresh Drive connection status (async, fire-and-forget).
+      void this.refreshDriveStatus();
     } finally {
       this.loading = false;
+    }
+  }
+
+  private async maybeHandleOAuthCallback(): Promise<boolean> {
+    if (typeof location === "undefined") return false;
+    if (!isOAuthCallbackPath(location.pathname)) return false;
+    try {
+      const { returnTo } = await completeDriveOAuth();
+      sessionStorage.setItem("markal.oauth.flash", "drive-connected");
+      location.replace(returnTo);
+    } catch (e) {
+      sessionStorage.setItem(
+        "markal.oauth.flash",
+        "error:" + (e instanceof Error ? e.message : String(e)),
+      );
+      location.replace("/");
+    }
+    return true;
+  }
+
+  private restoreOAuthFlash(): void {
+    try {
+      const flash = sessionStorage.getItem("markal.oauth.flash");
+      if (!flash) return;
+      sessionStorage.removeItem("markal.oauth.flash");
+      if (flash === "drive-connected") {
+        this.settingsOpen = true;
+      } else if (flash.startsWith("error:")) {
+        this.backupMessage = flash.slice("error:".length);
+        this.backupError = true;
+        this.settingsOpen = true;
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+  }
+
+  private async refreshDriveStatus(): Promise<void> {
+    try {
+      this.driveConnected = await isDriveConnected();
+    } catch {
+      this.driveConnected = false;
     }
   }
 
@@ -366,6 +463,178 @@ export class MarkalApp extends LitElement {
     this.shareLink = null;
     this.shareOpen = false;
   };
+
+  private setBackupMessage(message: string, isError: boolean): void {
+    this.backupMessage = message;
+    this.backupError = isError;
+  }
+
+  private setBackupError(error: unknown): void {
+    this.backupMessage = error instanceof Error ? error.message : String(error);
+    this.backupError = true;
+  }
+
+  private clearBackupMessage(): void {
+    this.backupMessage = "";
+    this.backupError = false;
+  }
+
+  private openExportPanel = (): void => {
+    this.exportPanelOpen = true;
+    this.exportPassphrase = "";
+    this.clearBackupMessage();
+  };
+
+  private closeExportPanel = (): void => {
+    this.exportPanelOpen = false;
+    this.exportPassphrase = "";
+  };
+
+  private confirmExport = async (): Promise<void> => {
+    try {
+      this.backupBusy = "export";
+      this.clearBackupMessage();
+      const passphrase = this.exportPassphrase.trim() || undefined;
+      const blob = await exportBackupAsBlob(passphrase);
+      downloadBlobAsFile(blob, suggestedBackupFilename());
+      this.exportPanelOpen = false;
+      this.exportPassphrase = "";
+      this.setBackupMessage(msg("Respaldo descargado"), false);
+    } catch (error) {
+      this.setBackupError(error);
+    } finally {
+      this.backupBusy = null;
+    }
+  };
+
+  private triggerImport = (): void => {
+    const input = this.shadowRoot?.querySelector<HTMLInputElement>(
+      ".backup-import-input",
+    );
+    input?.click();
+  };
+
+  private handleImportFileChosen = async (event: Event): Promise<void> => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    try {
+      this.backupBusy = "import";
+      this.clearBackupMessage();
+      const text = await file.text();
+      const parsed = await parseBackupText(text);
+      if (parsed.kind === "plain") {
+        await applyPlainBackup(parsed.backup);
+        this.refreshFromStorage();
+        this.setBackupMessage(msg("Respaldo importado"), false);
+      } else {
+        this.pendingImportEnvelope = parsed.envelope;
+        this.importPassphrase = "";
+      }
+    } catch (error) {
+      this.setBackupError(error);
+    } finally {
+      this.backupBusy = null;
+    }
+  };
+
+  private confirmImportPassphrase = async (): Promise<void> => {
+    if (!this.pendingImportEnvelope) return;
+    try {
+      this.backupBusy = "import";
+      this.clearBackupMessage();
+      await decryptAndApplyBackup(
+        this.pendingImportEnvelope,
+        this.importPassphrase,
+      );
+      this.refreshFromStorage();
+      this.pendingImportEnvelope = null;
+      this.importPassphrase = "";
+      this.setBackupMessage(msg("Respaldo importado"), false);
+    } catch (error) {
+      this.setBackupError(error);
+    } finally {
+      this.backupBusy = null;
+    }
+  };
+
+  private cancelImport = (): void => {
+    this.pendingImportEnvelope = null;
+    this.importPassphrase = "";
+    this.clearBackupMessage();
+  };
+
+  private connectDrive = async (): Promise<void> => {
+    try {
+      await startDriveOAuth("/");
+    } catch (error) {
+      this.setBackupError(error);
+    }
+  };
+
+  private disconnectDriveAction = async (): Promise<void> => {
+    try {
+      await disconnectDrive();
+      this.driveConnected = false;
+      this.drivePassphrase = "";
+      this.driveLastSync = null;
+      this.setBackupMessage(msg("Drive desconectado"), false);
+    } catch (error) {
+      this.setBackupError(error);
+    }
+  };
+
+  private pushDrive = async (): Promise<void> => {
+    if (!this.drivePassphrase.trim()) {
+      this.setBackupMessage(msg("Ingresa una contraseña de cifrado"), true);
+      return;
+    }
+    try {
+      this.backupBusy = "push";
+      this.clearBackupMessage();
+      const result = await pushBackupToDrive(this.drivePassphrase);
+      this.driveLastSync = new Date(result.modifiedTime).toLocaleString();
+      this.setBackupMessage(msg("Respaldo subido a Drive"), false);
+    } catch (error) {
+      this.setBackupError(error);
+    } finally {
+      this.backupBusy = null;
+    }
+  };
+
+  private pullDrive = async (): Promise<void> => {
+    if (!this.drivePassphrase.trim()) {
+      this.setBackupMessage(msg("Ingresa la contraseña de cifrado"), true);
+      return;
+    }
+    try {
+      this.backupBusy = "pull";
+      this.clearBackupMessage();
+      const result = await pullBackupFromDrive(this.drivePassphrase);
+      if (!result) {
+        this.setBackupMessage(msg("No hay respaldo en Drive todavía"), true);
+        return;
+      }
+      this.driveLastSync = new Date(result.modifiedTime).toLocaleString();
+      this.refreshFromStorage();
+      this.setBackupMessage(msg("Respaldo descargado de Drive"), false);
+    } catch (error) {
+      this.setBackupError(error);
+    } finally {
+      this.backupBusy = null;
+    }
+  };
+
+  private refreshFromStorage(): void {
+    const snapshot = getCollectionSnapshot();
+    if (!snapshot) return;
+    this.collection = snapshot;
+    const selected = getSelectedDocument(snapshot);
+    if (!selected.legends.find((l) => l.id === this.selectedLegendId)) {
+      this.selectedLegendId = selected.legends[0]?.id ?? "";
+    }
+  }
 
   protected updated(changed: Map<string, unknown>): void {
     if (changed.has("legendSheetOpen") && this.legendSheetOpen) {
@@ -677,7 +946,7 @@ export class MarkalApp extends LitElement {
               this.updateSettings({ maxMarksPerDay: event.detail })}"
           ></markal-radio-group>
         </markal-settings-row>
-        ${this.renderLanguageRow()}
+        ${this.renderLanguageRow()} ${this.renderBackupSection()}
       </markal-modal>
     `;
   }
@@ -700,6 +969,241 @@ export class MarkalApp extends LitElement {
             this.changeLocale(event.detail as LocaleCode)}"
         ></markal-radio-group>
       </markal-settings-row>
+    `;
+  }
+
+  private renderBackupSection() {
+    return html`
+      <markal-settings-row
+        stacked
+        rowTitle="${msg("Respaldo y sincronización")}"
+        helpText="${msg(
+          "Exporta tus datos como archivo o sincroniza con tu propia nube. Markal nunca toca tus datos en sus servidores.",
+        )}"
+      >
+        <div class="backup">
+          <div class="backup-block">
+            <div class="backup-block-title">
+              <i class="ph ph-floppy-disk"></i>
+              ${msg("Archivo local")}
+            </div>
+            ${this.exportPanelOpen
+              ? this.renderExportPanel()
+              : html`
+                <button
+                  class="backup-btn"
+                  type="button"
+                  ?disabled="${this.backupBusy !== null}"
+                  @click="${this.openExportPanel}"
+                >
+                  <i class="ph ph-download-simple"></i>
+                  ${msg("Exportar a archivo")}
+                </button>
+              `}
+            <button
+              class="backup-btn"
+              type="button"
+              ?disabled="${this.backupBusy !== null ||
+                this.pendingImportEnvelope !== null}"
+              @click="${this.triggerImport}"
+            >
+              <i class="ph ph-upload-simple"></i>
+              ${msg("Importar desde archivo")}
+            </button>
+            ${this.pendingImportEnvelope
+              ? this.renderImportPanel()
+              : nothing}
+            <input
+              class="backup-import-input"
+              type="file"
+              accept="application/json,.markal,.json"
+              hidden
+              @change="${this.handleImportFileChosen}"
+            />
+          </div>
+          <div class="backup-block">
+            <div class="backup-block-title">
+              <i class="ph ph-google-drive-logo"></i>
+              ${msg("Google Drive")}
+            </div>
+            ${this.renderDrivePanel()}
+          </div>
+          ${this.backupMessage
+            ? html`
+              <div
+                class="${`backup-status${this.backupError ? " is-error" : ""}`}"
+                role="status"
+              >
+                ${this.backupMessage}
+              </div>
+            `
+            : nothing}
+        </div>
+      </markal-settings-row>
+    `;
+  }
+
+  private renderExportPanel() {
+    return html`
+      <div class="backup-panel">
+        <label class="backup-field">
+          <span class="backup-field-label">
+            ${msg("Contraseña (opcional)")}
+          </span>
+          <input
+            class="backup-input"
+            type="password"
+            autocomplete="new-password"
+            .value="${this.exportPassphrase}"
+            @input="${(event: Event) => {
+              this.exportPassphrase = (event.target as HTMLInputElement).value;
+            }}"
+          />
+          <span class="backup-field-hint">
+            ${msg("Sin contraseña, el archivo no se cifra.")}
+          </span>
+        </label>
+        <div class="backup-panel-actions">
+          <button
+            class="backup-btn primary"
+            type="button"
+            ?disabled="${this.backupBusy !== null}"
+            @click="${this.confirmExport}"
+          >
+            ${msg("Descargar respaldo")}
+          </button>
+          <button
+            class="backup-btn ghost"
+            type="button"
+            @click="${this.closeExportPanel}"
+          >
+            ${msg("Cancelar")}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderImportPanel() {
+    return html`
+      <div class="backup-panel">
+        <label class="backup-field">
+          <span class="backup-field-label">
+            ${msg("Contraseña del respaldo")}
+          </span>
+          <input
+            class="backup-input"
+            type="password"
+            autocomplete="off"
+            .value="${this.importPassphrase}"
+            @input="${(event: Event) => {
+              this.importPassphrase = (event.target as HTMLInputElement).value;
+            }}"
+          />
+        </label>
+        <div class="backup-panel-actions">
+          <button
+            class="backup-btn primary"
+            type="button"
+            ?disabled="${this.backupBusy !== null}"
+            @click="${this.confirmImportPassphrase}"
+          >
+            ${msg("Restaurar")}
+          </button>
+          <button
+            class="backup-btn ghost"
+            type="button"
+            @click="${this.cancelImport}"
+          >
+            ${msg("Cancelar")}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderDrivePanel() {
+    if (!this.driveConfigured) {
+      return html`
+        <p class="backup-help">
+          ${msg(
+            "Drive no está habilitado en esta instancia. El operador necesita registrar un OAuth client_id de Google.",
+          )}
+        </p>
+      `;
+    }
+    if (!this.driveConnected) {
+      return html`
+        <p class="backup-help">
+          ${msg(
+            "Guarda un respaldo cifrado en tu propia cuenta de Drive. Markal nunca verá la contraseña ni los datos descifrados.",
+          )}
+        </p>
+        <button
+          class="backup-btn primary"
+          type="button"
+          @click="${this.connectDrive}"
+        >
+          <i class="ph ph-google-drive-logo"></i>
+          ${msg("Conectar Google Drive")}
+        </button>
+      `;
+    }
+    return html`
+      <p class="backup-help">
+        ${msg(
+          "Si olvidas la contraseña no podemos descifrar tu respaldo. Guárdala en un lugar seguro.",
+        )}
+      </p>
+      ${this.driveLastSync
+        ? html`
+          <p class="backup-meta">
+            ${msg(str`Última sincronización: ${this.driveLastSync}`)}
+          </p>
+        `
+        : nothing}
+      <label class="backup-field">
+        <span class="backup-field-label">
+          ${msg("Contraseña de cifrado")}
+        </span>
+        <input
+          class="backup-input"
+          type="password"
+          autocomplete="off"
+          .value="${this.drivePassphrase}"
+          @input="${(event: Event) => {
+            this.drivePassphrase = (event.target as HTMLInputElement).value;
+          }}"
+        />
+      </label>
+      <div class="backup-panel-actions">
+        <button
+          class="backup-btn primary"
+          type="button"
+          ?disabled="${this.backupBusy !== null}"
+          @click="${this.pushDrive}"
+        >
+          <i class="ph ph-cloud-arrow-up"></i>
+          ${msg("Subir a Drive")}
+        </button>
+        <button
+          class="backup-btn"
+          type="button"
+          ?disabled="${this.backupBusy !== null}"
+          @click="${this.pullDrive}"
+        >
+          <i class="ph ph-cloud-arrow-down"></i>
+          ${msg("Descargar de Drive")}
+        </button>
+        <button
+          class="backup-btn ghost"
+          type="button"
+          @click="${this.disconnectDriveAction}"
+        >
+          <i class="ph ph-sign-out"></i>
+          ${msg("Desconectar")}
+        </button>
+      </div>
     `;
   }
 
