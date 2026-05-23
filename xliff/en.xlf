@@ -2,14 +2,6 @@
 <xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
 <file target-language="en" source-language="es" original="lit-localize-inputs" datatype="plaintext">
 <body>
-<trans-unit id="s8c75818c4ac9196c">
-  <source>Cerrar menú</source>
-  <target>Close menu</target>
-</trans-unit>
-<trans-unit id="s7d2c90fa9396991f">
-  <source>Abrir menú</source>
-  <target>Open menu</target>
-</trans-unit>
 <trans-unit id="s535ba12f755d5f3a">
   <source>Información</source>
   <target>Information</target>
