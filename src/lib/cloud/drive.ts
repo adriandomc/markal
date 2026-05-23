@@ -24,7 +24,6 @@ import {
 
 const SCOPE = "https://www.googleapis.com/auth/drive.file";
 const AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
-const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke";
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 const DRIVE_UPLOAD = "https://www.googleapis.com/upload/drive/v3";
@@ -32,6 +31,25 @@ const BACKUP_FILENAME = "markal-backup.json";
 const PKCE_SESSION_KEY = "markal.oauth.pkce";
 
 const CALLBACK_PATH = "/oauth/google/callback";
+
+/**
+ * The token exchange and refresh routes live on the signaling server
+ * (which carries the client_secret server-side). We derive the HTTP base
+ * from the WS signaling URL: wss:// → https://, ws:// → http://.
+ */
+function tokenProxyBase(): string {
+  const env = (import.meta as unknown as {
+    env?: Record<string, string | undefined>;
+  }).env;
+  const ws = env?.PUBLIC_MARKAL_SIGNALING_URL;
+  if (typeof ws === "string" && ws.length > 0) {
+    if (ws.startsWith("wss://")) return "https://" + ws.slice("wss://".length);
+    if (ws.startsWith("ws://")) return "http://" + ws.slice("ws://".length);
+    return ws;
+  }
+  if (env?.DEV) return "http://localhost:8080";
+  return "https://signal.markal.app";
+}
 
 interface PkceSession {
   verifier: string;
@@ -143,17 +161,14 @@ export async function completeDriveOAuth(): Promise<{ returnTo: string }> {
     throw new Error("State mismatch (posible CSRF)");
   }
 
-  const body = new URLSearchParams();
-  body.set("client_id", clientId());
-  body.set("code", code);
-  body.set("code_verifier", session.verifier);
-  body.set("grant_type", "authorization_code");
-  body.set("redirect_uri", session.redirectUri);
-
-  const response = await fetch(TOKEN_ENDPOINT, {
+  const response = await fetch(`${tokenProxyBase()}/oauth/google/token`, {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      code,
+      code_verifier: session.verifier,
+      redirect_uri: session.redirectUri,
+    }),
   });
   if (!response.ok) {
     throw new Error(`Token exchange falló: ${await response.text()}`);
@@ -173,14 +188,10 @@ export async function completeDriveOAuth(): Promise<{ returnTo: string }> {
 }
 
 async function refreshAccessToken(refreshToken: string): Promise<DriveTokens> {
-  const body = new URLSearchParams();
-  body.set("client_id", clientId());
-  body.set("grant_type", "refresh_token");
-  body.set("refresh_token", refreshToken);
-  const response = await fetch(TOKEN_ENDPOINT, {
+  const response = await fetch(`${tokenProxyBase()}/oauth/google/refresh`, {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
   });
   if (!response.ok) {
     throw new Error(`Refresh falló: ${await response.text()}`);
