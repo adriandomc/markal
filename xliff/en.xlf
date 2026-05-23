@@ -387,6 +387,14 @@
   <source>Desconectar</source>
   <target>Disconnect</target>
 </trans-unit>
+<trans-unit id="s9c123a987e5dfa34">
+  <source>Privacidad</source>
+  <target>Privacy</target>
+</trans-unit>
+<trans-unit id="s30aa66cfa3ad3047">
+  <source>Ver política de privacidad</source>
+  <target>View privacy policy</target>
+</trans-unit>
 </body>
 </file>
 </xliff>
