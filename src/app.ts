@@ -1242,6 +1242,12 @@ export class MarkalApp extends LitElement {
               rel="noopener noreferrer"
             >Releases</a>
           </div>
+          <div class="info-meta-row">
+            <span class="info-meta-label">${msg("Privacidad")}</span>
+            <a class="info-link" href="/privacy">
+              ${msg("Ver política de privacidad")}
+            </a>
+          </div>
         </div>
         <div slot="footer" class="info-modal-footer">
           <p style="text-align:center">
