@@ -64,10 +64,11 @@ export class MarkalApp extends LitElement {
     infoOpen: { state: true },
     settingsOpen: { state: true },
     exportOpen: { state: true },
+    loading: { state: true },
   };
 
-  collection: CalendarCollection = loadCalendarCollection();
-  selectedLegendId = getSelectedDocument(this.collection).legends[0]?.id ?? "";
+  collection: CalendarCollection | null = null;
+  selectedLegendId = "";
   exportMessage = "";
   sidebarOpen: boolean = this.computeInitialSidebarState();
   isMobile: boolean = this.matchesMobile();
@@ -75,6 +76,7 @@ export class MarkalApp extends LitElement {
   infoOpen = false;
   settingsOpen = false;
   exportOpen = false;
+  loading = true;
 
   private mobileQuery: MediaQueryList | null = null;
   private mobileListener: ((event: MediaQueryListEvent) => void) | null = null;
@@ -140,6 +142,7 @@ export class MarkalApp extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     globalThis.addEventListener("keydown", this.handleGlobalKeydown);
+    void this.initStorage();
     if (typeof globalThis.matchMedia !== "function") {
       return;
     }
@@ -155,6 +158,17 @@ export class MarkalApp extends LitElement {
       }
     };
     this.mobileQuery.addEventListener("change", this.mobileListener);
+  }
+
+  private async initStorage(): Promise<void> {
+    try {
+      const collection = await loadCalendarCollection();
+      this.collection = collection;
+      this.selectedLegendId =
+        getSelectedDocument(collection).legends[0]?.id ?? "";
+    } finally {
+      this.loading = false;
+    }
   }
 
   disconnectedCallback(): void {
@@ -295,6 +309,14 @@ export class MarkalApp extends LitElement {
   static styles = [iconStyles, localStyles(appStyles)];
 
   render() {
+    if (this.loading || !this.collection) {
+      return html`
+        <div class="app-loading" role="status" aria-live="polite">
+          <span>${msg("Cargando…")}</span>
+        </div>
+      `;
+    }
+
     const document = this.selectedDocument;
 
     return html`
@@ -633,7 +655,7 @@ export class MarkalApp extends LitElement {
           ></markal-icon-button>
         </div>
         <div class="calendar-list">
-          ${this.collection.documents.map((calendar) =>
+          ${this.collection?.documents.map((calendar) =>
             this.renderCalendarItem(calendar)
           )}
         </div>
@@ -642,12 +664,14 @@ export class MarkalApp extends LitElement {
   }
 
   private renderCalendarItem(calendar: CalendarDocument) {
-    const selected = calendar.id === this.collection.selectedId;
+    const collection = this.collection;
+    if (!collection) return nothing;
+    const selected = calendar.id === collection.selectedId;
     return html`
       <markal-calendar-item
         .name="${calendar.title}"
         ?selected="${selected}"
-        .canDelete="${this.collection.documents.length > 1}"
+        .canDelete="${collection.documents.length > 1}"
         @markal-select="${() => this.selectCalendarById(calendar.id)}"
         @markal-rename="${(event: CustomEvent<string>) =>
           this.renameCalendarById(calendar.id, event.detail)}"
@@ -658,6 +682,9 @@ export class MarkalApp extends LitElement {
   }
 
   private get selectedDocument(): CalendarDocument {
+    if (!this.collection) {
+      throw new Error("selectedDocument accessed before storage was ready");
+    }
     return getSelectedDocument(this.collection);
   }
 
@@ -669,6 +696,8 @@ export class MarkalApp extends LitElement {
   private updateSelectedDocument(
     updater: (document: CalendarDocument) => CalendarDocument,
   ): void {
+    const collection = this.collection;
+    if (!collection) return;
     const current = this.selectedDocument;
     const updated = {
       ...updater(current),
@@ -676,25 +705,29 @@ export class MarkalApp extends LitElement {
     };
 
     this.persist({
-      ...this.collection,
-      documents: this.collection.documents.map((
+      ...collection,
+      documents: collection.documents.map((
         document,
       ) => (document.id === current.id ? updated : document)),
     });
   }
 
   private selectCalendarById(selectedId: string): void {
-    const selected = this.collection.documents.find((document) =>
+    const collection = this.collection;
+    if (!collection) return;
+    const selected = collection.documents.find((document) =>
       document.id === selectedId
     );
     this.selectedLegendId = selected?.legends[0]?.id ?? "";
-    this.persist({ ...this.collection, selectedId });
+    this.persist({ ...collection, selectedId });
   }
 
   private renameCalendarById(id: string, title: string): void {
+    const collection = this.collection;
+    if (!collection) return;
     this.persist({
-      ...this.collection,
-      documents: this.collection.documents.map((document) =>
+      ...collection,
+      documents: collection.documents.map((document) =>
         document.id === id
           ? { ...document, title, updatedAt: new Date().toISOString() }
           : document
@@ -703,22 +736,24 @@ export class MarkalApp extends LitElement {
   }
 
   private createCalendar = (): void => {
-    const nextNumber = this.collection.documents.length + 1;
+    const collection = this.collection;
+    if (!collection) return;
+    const nextNumber = collection.documents.length + 1;
     const document = createCalendarDocument(
       msg(str`Calendario ${nextNumber}`),
     );
     this.selectedLegendId = document.legends[0]?.id ?? "";
     this.persist({
-      ...this.collection,
+      ...collection,
       selectedId: document.id,
-      documents: [...this.collection.documents, document],
+      documents: [...collection.documents, document],
     });
   };
 
   private duplicateCalendarFromEvent(id: string): void {
-    const source = this.collection.documents.find((document) =>
-      document.id === id
-    );
+    const collection = this.collection;
+    if (!collection) return;
+    const source = collection.documents.find((document) => document.id === id);
     if (!source) {
       return;
     }
@@ -729,20 +764,20 @@ export class MarkalApp extends LitElement {
     );
     this.selectedLegendId = document.legends[0]?.id ?? "";
     this.persist({
-      ...this.collection,
+      ...collection,
       selectedId: document.id,
-      documents: [...this.collection.documents, document],
+      documents: [...collection.documents, document],
     });
   }
 
   private deleteCalendarFromEvent(id: string): void {
-    if (this.collection.documents.length <= 1) {
+    const collection = this.collection;
+    if (!collection) return;
+    if (collection.documents.length <= 1) {
       return;
     }
 
-    const target = this.collection.documents.find((document) =>
-      document.id === id
-    );
+    const target = collection.documents.find((document) => document.id === id);
     if (
       !target ||
       !globalThis.confirm(
@@ -754,17 +789,17 @@ export class MarkalApp extends LitElement {
       return;
     }
 
-    const remaining = this.collection.documents.filter((document) =>
+    const remaining = collection.documents.filter((document) =>
       document.id !== id
     );
-    const selectedId = id === this.collection.selectedId
+    const selectedId = id === collection.selectedId
       ? remaining[0].id
-      : this.collection.selectedId;
+      : collection.selectedId;
     const selected = remaining.find((document) => document.id === selectedId) ??
       remaining[0];
     this.selectedLegendId = selected.legends[0]?.id ?? "";
     this.persist({
-      ...this.collection,
+      ...collection,
       selectedId,
       documents: remaining,
     });
