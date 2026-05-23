@@ -40,11 +40,27 @@ import {
   clampMaxMarksPerDay,
 } from "./lib/marks.ts";
 import {
+  ensureSharedCalendar,
+  getCalendarDoc,
   getSelectedDocument,
+  getShareInfo,
+  initStorage,
   loadCalendarCollection,
   saveCalendarCollection,
+  setShareInfo,
+  type ShareInfo,
   subscribeToCollectionChanges,
 } from "./lib/storage.ts";
+import {
+  buildShareLink,
+  generateEncryptionKey,
+  generateRoomId,
+  isValidKey,
+  isValidRoomId,
+  parseShareFragment,
+  type ShareLink,
+} from "./lib/sync/share.ts";
+import { connectShared, disconnectShared } from "./lib/sync/webrtc.ts";
 
 const SIDEBAR_STORAGE_KEY = "markal.sidebar.open";
 const LEGACY_SIDEBAR_OPEN_KEY = "coolcal.sidebar.open";
@@ -65,6 +81,9 @@ export class MarkalApp extends LitElement {
     infoOpen: { state: true },
     settingsOpen: { state: true },
     exportOpen: { state: true },
+    shareOpen: { state: true },
+    shareLink: { state: true },
+    shareCopied: { state: true },
     loading: { state: true },
   };
 
@@ -77,6 +96,9 @@ export class MarkalApp extends LitElement {
   infoOpen = false;
   settingsOpen = false;
   exportOpen = false;
+  shareOpen = false;
+  shareLink: ShareLink | null = null;
+  shareCopied = false;
   loading = true;
 
   private mobileQuery: MediaQueryList | null = null;
@@ -164,28 +186,72 @@ export class MarkalApp extends LitElement {
 
   private async initStorage(): Promise<void> {
     try {
+      // 1. Open storage (loads existing calendars, but does NOT auto-seed
+      //    a default — we want to give share-landing a chance to populate first).
+      await initStorage();
+
+      // 2. If URL is a share landing, join the room (creates placeholder Y.Doc
+      //    + attaches WebrtcProvider). This avoids creating a stray default.
+      await this.maybeHandleShareLanding();
+
+      // 3. Now ensure we have at least one calendar (seeds default if empty).
       const collection = await loadCalendarCollection();
       this.collection = collection;
       this.selectedLegendId =
         getSelectedDocument(collection).legends[0]?.id ?? "";
       this.unsubscribeCollection = subscribeToCollectionChanges(
         (remoteCollection) => {
-          // Triggered when the Y.Doc receives a non-local update
-          // (peer sync in Phase 4, cloud restore in Phase 5).
           this.collection = remoteCollection;
-          if (
-            !remoteCollection.documents.find((d) =>
-              d.id === remoteCollection.selectedId
-            )?.legends.find((l) => l.id === this.selectedLegendId)
-          ) {
-            const selected = getSelectedDocument(remoteCollection);
+          const selected = getSelectedDocument(remoteCollection);
+          if (!selected.legends.find((l) => l.id === this.selectedLegendId)) {
             this.selectedLegendId = selected.legends[0]?.id ?? "";
           }
         },
       );
+
+      // 4. Reconnect WebrtcProvider for every calendar with shareInfo
+      //    (auto-resume sharing after reload).
+      for (const doc of collection.documents) {
+        const info = getShareInfo(doc.id);
+        if (info) this.connectCalendarSync(doc.id, info);
+      }
     } finally {
       this.loading = false;
     }
+  }
+
+  private async maybeHandleShareLanding(): Promise<void> {
+    if (typeof location === "undefined") return;
+    const match = location.pathname.match(/^\/c\/([^\/]+)\/?$/);
+    if (!match) return;
+    const roomId = decodeURIComponent(match[1]);
+    const key = parseShareFragment(location.hash);
+    if (!isValidRoomId(roomId) || !key || !isValidKey(key)) return;
+
+    // Storage was opened by caller via initStorage(); create the placeholder
+    // for this room and attach the sync provider so peer data flows in.
+    const calendarId = await ensureSharedCalendar(roomId);
+    const info: ShareInfo = {
+      roomId,
+      encryptionKey: key,
+      createdAt: new Date().toISOString(),
+    };
+    setShareInfo(calendarId, info);
+    this.connectCalendarSync(calendarId, info);
+
+    // Clean up URL so the key stops appearing in browser history.
+    history.replaceState({}, "", "/");
+  }
+
+  private connectCalendarSync(calendarId: string, info: ShareInfo): void {
+    const doc = getCalendarDoc(calendarId);
+    if (!doc) return;
+    connectShared({
+      calendarId,
+      roomId: info.roomId,
+      encryptionKey: info.encryptionKey,
+      doc,
+    });
   }
 
   disconnectedCallback(): void {
@@ -260,6 +326,47 @@ export class MarkalApp extends LitElement {
     this.exportOpen = false;
   };
 
+  private openShareForCalendar = (calendarId: string): void => {
+    let info = getShareInfo(calendarId);
+    if (!info) {
+      info = {
+        roomId: generateRoomId(),
+        encryptionKey: generateEncryptionKey(),
+        createdAt: new Date().toISOString(),
+      };
+      setShareInfo(calendarId, info);
+      this.connectCalendarSync(calendarId, info);
+    }
+    const origin = typeof location !== "undefined"
+      ? location.origin
+      : "https://markal.app";
+    this.shareLink = buildShareLink(origin, info.roomId, info.encryptionKey);
+    this.shareCopied = false;
+    this.shareOpen = true;
+  };
+
+  private closeShare = (): void => {
+    this.shareOpen = false;
+    this.shareCopied = false;
+  };
+
+  private copyShareLink = async (): Promise<void> => {
+    if (!this.shareLink) return;
+    try {
+      await navigator.clipboard.writeText(this.shareLink.url);
+      this.shareCopied = true;
+    } catch {
+      this.shareCopied = false;
+    }
+  };
+
+  private stopSharing = (calendarId: string): void => {
+    disconnectShared(calendarId);
+    setShareInfo(calendarId, null);
+    this.shareLink = null;
+    this.shareOpen = false;
+  };
+
   protected updated(changed: Map<string, unknown>): void {
     if (changed.has("legendSheetOpen") && this.legendSheetOpen) {
       this.focusDialog(".legend-sheet.open");
@@ -268,6 +375,12 @@ export class MarkalApp extends LitElement {
 
   private handleGlobalKeydown = (event: KeyboardEvent): void => {
     if (event.key !== "Escape") {
+      return;
+    }
+
+    if (this.shareOpen) {
+      event.preventDefault();
+      this.closeShare();
       return;
     }
 
@@ -421,7 +534,67 @@ export class MarkalApp extends LitElement {
       ${this.isMobile
         ? this.renderLegendDock(document.legends)
         : nothing} ${this.renderInfoModal()} ${this.renderSettingsModal()}
-      ${this.renderExportModal()}
+      ${this.renderExportModal()} ${this.renderShareModal()}
+    `;
+  }
+
+  private renderShareModal() {
+    const link = this.shareLink;
+    const selectedDoc = this.collection?.documents.find((d) =>
+      Boolean(link) && getShareInfo(d.id)?.roomId === link?.roomId
+    );
+
+    return html`
+      <markal-modal
+        ?open="${this.shareOpen}"
+        label="${msg("Compartir calendario")}"
+        size="md"
+        @markal-close="${this.closeShare}"
+      >
+        <p class="share-help">
+          ${msg(
+            "Cualquiera con este enlace podrá ver y editar este calendario en tiempo real. Tus otros calendarios no se comparten.",
+          )}
+        </p>
+        <div class="share-link-row">
+          <input
+            class="share-link-input"
+            type="text"
+            readonly
+            .value="${link?.url ?? ""}"
+            aria-label="${msg("Enlace para compartir")}"
+            @focus="${(e: FocusEvent) =>
+              (e.target as HTMLInputElement).select()}"
+          />
+          <markal-icon-button
+            icon="copy-simple"
+            label="${this.shareCopied ? msg("Copiado") : msg("Copiar")}"
+            @click="${this.copyShareLink}"
+          ></markal-icon-button>
+        </div>
+        ${this.shareCopied
+          ? html`<p class="share-status">${msg("Enlace copiado")}</p>`
+          : nothing}
+        <p class="share-privacy">
+          ${msg(
+            "El cifrado de extremo a extremo viaja en el fragmento (#) del enlace, que no llega a ningún servidor.",
+          )}
+        </p>
+        ${selectedDoc
+          ? html`
+            <div class="share-actions">
+              <button
+                class="action-button share-stop"
+                type="button"
+                @click="${() => this.stopSharing(selectedDoc.id)}"
+              >
+                <i class="ph ph-link-simple"></i>
+                ${msg("Dejar de compartir")}
+              </button>
+            </div>
+          `
+          : nothing}
+      </markal-modal>
     `;
   }
 
@@ -688,16 +861,19 @@ export class MarkalApp extends LitElement {
     const collection = this.collection;
     if (!collection) return nothing;
     const selected = calendar.id === collection.selectedId;
+    const shared = Boolean(getShareInfo(calendar.id));
     return html`
       <markal-calendar-item
         .name="${calendar.title}"
         ?selected="${selected}"
+        ?shared="${shared}"
         .canDelete="${collection.documents.length > 1}"
         @markal-select="${() => this.selectCalendarById(calendar.id)}"
         @markal-rename="${(event: CustomEvent<string>) =>
           this.renameCalendarById(calendar.id, event.detail)}"
         @markal-duplicate="${() => this.duplicateCalendarFromEvent(calendar.id)}"
         @markal-delete="${() => this.deleteCalendarFromEvent(calendar.id)}"
+        @markal-share="${() => this.openShareForCalendar(calendar.id)}"
       ></markal-calendar-item>
     `;
   }
