@@ -82,9 +82,6 @@ import {
   startDriveOAuth,
 } from "./lib/cloud/drive.ts";
 
-const SIDEBAR_STORAGE_KEY = "markal.sidebar.open";
-const LEGACY_SIDEBAR_OPEN_KEY = "coolcal.sidebar.open";
-const LEGACY_SIDEBAR_COLLAPSED_KEY = "coolcal.sidebar.collapsed";
 const MOBILE_QUERY = "(max-width: 980px)";
 const APP_VERSION = "0.1.0";
 const REPO_URL = "https://github.com/adriandomc/markal";
@@ -95,12 +92,12 @@ export class MarkalApp extends LitElement {
     collection: { state: true },
     selectedLegendId: { state: true },
     exportMessage: { state: true },
-    sidebarOpen: { state: true },
     isMobile: { state: true },
     legendSheetOpen: { state: true },
     infoOpen: { state: true },
     settingsOpen: { state: true },
     exportOpen: { state: true },
+    calendariosOpen: { state: true },
     shareOpen: { state: true },
     shareLink: { state: true },
     shareCopied: { state: true },
@@ -121,12 +118,12 @@ export class MarkalApp extends LitElement {
   collection: CalendarCollection | null = null;
   selectedLegendId = "";
   exportMessage = "";
-  sidebarOpen: boolean = this.computeInitialSidebarState();
   isMobile: boolean = this.matchesMobile();
   legendSheetOpen = false;
   infoOpen = false;
   settingsOpen = false;
   exportOpen = false;
+  calendariosOpen = false;
   shareOpen = false;
   shareLink: ShareLink | null = null;
   shareCopied = false;
@@ -170,41 +167,6 @@ export class MarkalApp extends LitElement {
       globalThis.matchMedia(MOBILE_QUERY).matches;
   }
 
-  private readStoredPreference(): boolean | null {
-    try {
-      const current = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-      if (current !== null) {
-        return current === "true";
-      }
-
-      const legacyOpen = localStorage.getItem(LEGACY_SIDEBAR_OPEN_KEY);
-      if (legacyOpen !== null) {
-        localStorage.setItem(SIDEBAR_STORAGE_KEY, legacyOpen);
-        localStorage.removeItem(LEGACY_SIDEBAR_OPEN_KEY);
-        return legacyOpen === "true";
-      }
-
-      const legacyCollapsed = localStorage.getItem(LEGACY_SIDEBAR_COLLAPSED_KEY);
-      if (legacyCollapsed !== null) {
-        const open = legacyCollapsed !== "true";
-        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(open));
-        localStorage.removeItem(LEGACY_SIDEBAR_COLLAPSED_KEY);
-        return open;
-      }
-    } catch {
-      // localStorage unavailable
-    }
-    return null;
-  }
-
-  private computeInitialSidebarState(): boolean {
-    if (this.matchesMobile()) {
-      return false;
-    }
-
-    return this.readStoredPreference() ?? true;
-  }
-
   connectedCallback(): void {
     super.connectedCallback();
     globalThis.addEventListener("keydown", this.handleGlobalKeydown);
@@ -216,10 +178,7 @@ export class MarkalApp extends LitElement {
     this.mobileQuery = globalThis.matchMedia(MOBILE_QUERY);
     this.mobileListener = (event: MediaQueryListEvent) => {
       this.isMobile = event.matches;
-      if (event.matches) {
-        this.sidebarOpen = false;
-      } else {
-        this.sidebarOpen = this.readStoredPreference() ?? true;
+      if (!event.matches) {
         this.legendSheetOpen = false;
       }
     };
@@ -363,25 +322,12 @@ export class MarkalApp extends LitElement {
     }
   }
 
-  private toggleSidebar = (): void => {
-    this.sidebarOpen = !this.sidebarOpen;
-    try {
-      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(this.sidebarOpen));
-    } catch {
-      // localStorage unavailable; in-memory state still works.
-    }
+  private openCalendarios = (): void => {
+    this.calendariosOpen = true;
   };
 
-  private closeSidebar = (): void => {
-    if (!this.sidebarOpen) {
-      return;
-    }
-    this.sidebarOpen = false;
-    try {
-      localStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
-    } catch {
-      // localStorage unavailable
-    }
+  private closeCalendarios = (): void => {
+    this.calendariosOpen = false;
   };
 
   private openLegendSheet = (): void => {
@@ -677,9 +623,9 @@ export class MarkalApp extends LitElement {
       return;
     }
 
-    if (this.isMobile && this.sidebarOpen) {
+    if (this.calendariosOpen) {
       event.preventDefault();
-      this.closeSidebar();
+      this.closeCalendarios();
     }
   };
 
@@ -723,33 +669,19 @@ export class MarkalApp extends LitElement {
     const document = this.selectedDocument;
 
     return html`
-      <div
-        class="${`sidebar-backdrop${this.sidebarOpen ? " visible" : ""}`}"
-        @click="${this.closeSidebar}"
-      >
-      </div>
-      <nav
-        class="${`quick-bar${this.sidebarOpen ? " sidebar-open" : ""}`}"
-        aria-label="${msg("Acciones rápidas")}"
-      >
-        <button
-          class="${`quick-toggle${this.sidebarOpen ? " is-open" : ""}`}"
-          type="button"
-          aria-label="${this.sidebarOpen
-            ? msg("Cerrar menú")
-            : msg("Abrir menú")}"
-          aria-expanded="${String(this.sidebarOpen)}"
-          @click="${this.toggleSidebar}"
-        >
-          <i class="${this.sidebarOpen ? "ph ph-x" : "ph ph-list"}"></i>
-        </button>
+      <nav class="quick-bar" aria-label="${msg("Acciones rápidas")}">
+        <markal-icon-button
+          icon="calendar-dots"
+          label="${msg("Calendarios")}"
+          size="lg"
+          variant="strong"
+          @click="${this.openCalendarios}"
+        ></markal-icon-button>
         <markal-icon-button
           icon="export"
           label="${msg("Exportar")}"
           size="lg"
           variant="strong"
-          aria-hidden="${String(this.sidebarOpen)}"
-          ?inert="${this.sidebarOpen}"
           @click="${this.openExport}"
         ></markal-icon-button>
         <markal-icon-button
@@ -757,8 +689,6 @@ export class MarkalApp extends LitElement {
           label="${msg("Configuración")}"
           size="lg"
           variant="strong"
-          aria-hidden="${String(this.sidebarOpen)}"
-          ?inert="${this.sidebarOpen}"
           @click="${this.openSettings}"
         ></markal-icon-button>
         <markal-icon-button
@@ -766,13 +696,10 @@ export class MarkalApp extends LitElement {
           label="${msg("Información")}"
           size="lg"
           variant="strong"
-          aria-hidden="${String(this.sidebarOpen)}"
-          ?inert="${this.sidebarOpen}"
           @click="${this.openInfo}"
         ></markal-icon-button>
       </nav>
       <main class="app-shell">
-        ${this.renderSidebar()}
         <div class="main-pane">
           <section class="range-row">
             <markal-date-range-control
@@ -804,6 +731,7 @@ export class MarkalApp extends LitElement {
         ? this.renderLegendDock(document.legends)
         : nothing} ${this.renderInfoModal()} ${this.renderSettingsModal()}
       ${this.renderExportModal()} ${this.renderShareModal()}
+      ${this.renderCalendariosModal()}
     `;
   }
 
@@ -1214,6 +1142,16 @@ export class MarkalApp extends LitElement {
         label="${msg("Acerca de Markal")}"
         @markal-close="${this.closeInfo}"
       >
+        <div class="info-brand">
+          <img
+            class="info-brand-logo"
+            src="/favicon.svg"
+            alt="Markal"
+            width="72"
+            height="72"
+          />
+          <span class="info-brand-name">Markal</span>
+        </div>
         <p class="info-description">
           ${msg(
             "Markal es una herramienta para crear calendarios marcables. Sólo tienes que definir un rango de fechas, definir el color de la leyenda y ¡comenzar a marcar tu calendario!",
@@ -1292,13 +1230,11 @@ export class MarkalApp extends LitElement {
       </div>
       <div class="legend-dock">
         <div
-          class="${`legend-peek${
-            this.legendSheetOpen || this.sidebarOpen ? " is-hidden" : ""
-          }`}"
+          class="${`legend-peek${this.legendSheetOpen ? " is-hidden" : ""}`}"
           role="toolbar"
           aria-label="${msg("Selector de leyenda")}"
-          aria-hidden="${String(this.legendSheetOpen || this.sidebarOpen)}"
-          ?inert="${this.legendSheetOpen || this.sidebarOpen}"
+          aria-hidden="${String(this.legendSheetOpen)}"
+          ?inert="${this.legendSheetOpen}"
         >
           <div class="legend-chips">
             ${legends.map((legend) =>
@@ -1361,17 +1297,15 @@ export class MarkalApp extends LitElement {
     `;
   }
 
-  private renderSidebar() {
+  private renderCalendariosModal() {
     return html`
-      <aside class="${`sidebar${
-        this.sidebarOpen ? " open" : ""
-      }`}" aria-hidden="${String(!this.sidebarOpen)}">
-        <h1 class="brand">
-          <i class="ph ph-calendar-dots"></i>
-          Markal
-        </h1>
-        <div class="sidebar-section-title">
-          <span>${msg("Calendarios")}</span>
+      <markal-modal
+        ?open="${this.calendariosOpen}"
+        label="${msg("Calendarios")}"
+        size="lg"
+        @markal-close="${this.closeCalendarios}"
+      >
+        <div class="calendarios-modal-header">
           <markal-icon-button
             icon="plus"
             label="${msg("Nuevo calendario")}"
@@ -1383,7 +1317,7 @@ export class MarkalApp extends LitElement {
             this.renderCalendarItem(calendar)
           )}
         </div>
-      </aside>
+      </markal-modal>
     `;
   }
 

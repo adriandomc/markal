@@ -1,8 +1,7 @@
 @use "./styles/mixins" as *;
 
 :host {
-  --sidebar-width: 17.5rem;
-  --sidebar-gap: 1rem;
+  --quick-bar-gap: 1rem;
   --toggle-size: 2.5rem;
   display: block;
   min-height: 100vh;
@@ -22,97 +21,30 @@
   margin: 0 auto;
   display: block;
   padding: 1.375rem 0 2rem;
-  padding-left: calc(var(--sidebar-gap) + var(--toggle-size) + 0.5rem);
-}
-
-.sidebar {
-  position: fixed;
-  top: var(--sidebar-gap);
-  left: var(--sidebar-gap);
-  width: var(--sidebar-width);
-  max-width: calc(100vw - calc(var(--sidebar-gap) * 2));
-  height: calc(100vh - calc(var(--sidebar-gap) * 2));
-  display: flex;
-  flex-direction: column;
-  @include panel;
-  z-index: 10;
-  transform: translateX(calc(-100% - var(--sidebar-gap)));
-  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-
-  &.open {
-    transform: translateX(0);
-  }
-}
-
-.sidebar-backdrop {
-  @include overlay-backdrop(9);
+  padding-left: calc(var(--quick-bar-gap) + var(--toggle-size) + 0.5rem);
 }
 
 .quick-bar {
   position: fixed;
-  top: var(--sidebar-gap);
-  left: var(--sidebar-gap);
+  top: var(--quick-bar-gap);
+  left: var(--quick-bar-gap);
   z-index: 12;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.quick-toggle {
-  @include icon-button(var(--toggle-size), 5px, var(--border-strong));
-  transition:
-    transform 140ms ease,
-    border-color 140ms ease,
-    background 140ms ease;
-
-  &.is-open {
-    border-color: var(--border);
-    background: transparent;
-  }
-}
-
-.quick-bar markal-icon-button {
-  transition: opacity 180ms ease;
-}
-
-.quick-bar.sidebar-open markal-icon-button {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.brand {
+.calendarios-modal-header {
   display: flex;
-  align-items: center;
-  gap: 0.5625rem;
-  padding-left: calc(var(--toggle-size) + 0.375rem);
-  min-height: var(--toggle-size);
-  margin: 0 0 0.875rem;
-  font-size: 1.1rem;
-  letter-spacing: 0;
-
-  i {
-    font-size: 1.25rem;
-  }
-}
-
-.sidebar-section-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.625rem;
-  @include uppercase-label;
+  justify-content: flex-end;
+  margin-bottom: 0.875rem;
 }
 
 .calendar-list {
   display: grid;
   align-content: start;
   gap: 0.5rem;
-  overflow: auto;
-  padding-right: 0.125rem;
   min-height: 0;
-  flex: 1 1 auto;
 }
 
 .action-button {
@@ -322,6 +254,26 @@
     text-decoration: underline;
     text-underline-offset: 3px;
   }
+}
+
+.info-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0 1.25rem;
+}
+
+.info-brand-logo {
+  width: 4.5rem;
+  height: 4.5rem;
+  display: block;
+}
+
+.info-brand-name {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .info-meta {
@@ -535,10 +487,6 @@
 }
 
 @include mobile {
-  :host {
-    --sidebar-width: min(20rem, calc(100vw - 2rem));
-  }
-
   .workspace {
     grid-template-columns: 1fr;
   }
