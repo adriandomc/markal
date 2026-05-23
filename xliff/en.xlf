@@ -387,13 +387,25 @@
   <source>Desconectar</source>
   <target>Disconnect</target>
 </trans-unit>
-<trans-unit id="s9c123a987e5dfa34">
-  <source>Privacidad</source>
-  <target>Privacy</target>
+<trans-unit id="s9bcc9c12e2ec2759">
+  <source>Privacidad y seguridad</source>
+  <target>Privacy and security</target>
 </trans-unit>
-<trans-unit id="s30aa66cfa3ad3047">
-  <source>Ver política de privacidad</source>
-  <target>View privacy policy</target>
+<trans-unit id="sf686305e0cc8fdab">
+  <source>Tus calendarios viven solo en tu navegador. Markal no tiene servidores que los almacenen.</source>
+  <target>Your calendars live only in your browser. Markal has no servers that store them.</target>
+</trans-unit>
+<trans-unit id="s20ee091c43dfc3a8">
+  <source>Compartir un calendario cifra los datos extremo a extremo (AES-GCM-256). La clave viaja en el fragmento (#) del enlace, que nunca llega a un servidor.</source>
+  <target>Sharing a calendar encrypts the data end-to-end (AES-GCM-256). The key travels in the link's fragment (#), which never reaches any server.</target>
+</trans-unit>
+<trans-unit id="s875b891c03e3f9eb">
+  <source>El respaldo en Google Drive (opcional) viaja cifrado con tu contraseña. Markal no puede leer el contenido.</source>
+  <target>The optional Google Drive backup is encrypted with your passphrase. Markal cannot read the content.</target>
+</trans-unit>
+<trans-unit id="s354a93e9b3e57467">
+  <source>Leer política completa →</source>
+  <target>Read full policy →</target>
 </trans-unit>
 </body>
 </file>
