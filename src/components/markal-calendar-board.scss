@@ -88,6 +88,9 @@
   isolation: isolate;
   padding: 0;
   text-align: center;
+  // Default: let the page scroll vertically when the user touches a day
+  // without long-pressing. The host's [dragging] attribute switches this
+  // off as soon as a drag-select starts (see :host([dragging]) below).
   touch-action: pan-y pinch-zoom;
   transition:
     border-color 150ms ease,
@@ -131,6 +134,13 @@
 .mode-years .day {
   min-height: 1.6875rem;
   font-size: 0.76rem;
+}
+
+:host([dragging]) {
+  .day,
+  .board {
+    touch-action: none;
+  }
 }
 
 .day-number {

@@ -57,10 +57,28 @@ export class MarkalCalendarBoard extends LitElement {
 
   static styles = localStyles(boardStyles);
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    // Registered on the host (not on individual day buttons) so it catches
+    // touchmove from any descendant. Must be non-passive so we can call
+    // preventDefault while a drag-select is in progress — this is what
+    // actually stops the page from scrolling when the user drags vertically.
+    this.addEventListener("touchmove", this.handleTouchMove, {
+      passive: false,
+    });
+  }
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.removeEventListener("touchmove", this.handleTouchMove);
     this.cleanupDrag();
   }
+
+  private handleTouchMove = (event: TouchEvent): void => {
+    if (this.dragMoved) {
+      event.preventDefault();
+    }
+  };
 
   render() {
     if (!this.document) {
@@ -265,6 +283,10 @@ export class MarkalCalendarBoard extends LitElement {
       return;
     }
     this.dragMoved = true;
+    // Reflect drag state to a host attribute so CSS can switch off the
+    // pan-y touch-action and the browser stops trying to scroll on future
+    // touches inside the calendar grid.
+    this.setAttribute("dragging", "");
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(10);
@@ -376,6 +398,7 @@ export class MarkalCalendarBoard extends LitElement {
     this.dragAction = null;
     this.dragStartDate = null;
     this.dragMoved = false;
+    this.removeAttribute("dragging");
     globalThis.removeEventListener("pointermove", this.handlePointerMove);
     globalThis.removeEventListener("pointerup", this.handlePointerUp);
     globalThis.removeEventListener("pointercancel", this.handlePointerCancel);
