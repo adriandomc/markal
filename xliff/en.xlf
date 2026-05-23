@@ -271,6 +271,122 @@
   <source>Compartir</source>
   <target>Share</target>
 </trans-unit>
+<trans-unit id="s7f3e0f402cf0ee76">
+  <source>Respaldo descargado</source>
+  <target>Backup downloaded</target>
+</trans-unit>
+<trans-unit id="scaaa52e5b14ff4e6">
+  <source>Respaldo importado</source>
+  <target>Backup imported</target>
+</trans-unit>
+<trans-unit id="s210609a566fb9e9b">
+  <source>Drive desconectado</source>
+  <target>Drive disconnected</target>
+</trans-unit>
+<trans-unit id="sb7895aec44ab8c78">
+  <source>Ingresa una contraseña de cifrado</source>
+  <target>Enter an encryption passphrase</target>
+</trans-unit>
+<trans-unit id="s2937ca394494c806">
+  <source>Respaldo subido a Drive</source>
+  <target>Backup uploaded to Drive</target>
+</trans-unit>
+<trans-unit id="s1230db1b6d462879">
+  <source>Ingresa la contraseña de cifrado</source>
+  <target>Enter the encryption passphrase</target>
+</trans-unit>
+<trans-unit id="s2965d496395344fb">
+  <source>No hay respaldo en Drive todavía</source>
+  <target>No backup found in Drive yet</target>
+</trans-unit>
+<trans-unit id="sb52ea4c4221c7035">
+  <source>Respaldo descargado de Drive</source>
+  <target>Backup downloaded from Drive</target>
+</trans-unit>
+<trans-unit id="s3f5c6eae9526d1d1">
+  <source>Respaldo y sincronización</source>
+  <target>Backup and sync</target>
+</trans-unit>
+<trans-unit id="scb78c9d921c7c613">
+  <source>Exporta tus datos como archivo o sincroniza con tu propia nube. Markal nunca toca tus datos en sus servidores.</source>
+  <target>Export your data as a file or sync with your own cloud. Markal never handles your data on its servers.</target>
+</trans-unit>
+<trans-unit id="s211cf99fb96f9a58">
+  <source>Archivo local</source>
+  <target>Local file</target>
+</trans-unit>
+<trans-unit id="s782c3be07ee5fa5f">
+  <source>Exportar a archivo</source>
+  <target>Export to file</target>
+</trans-unit>
+<trans-unit id="s991fc46d3e0ed690">
+  <source>Importar desde archivo</source>
+  <target>Import from file</target>
+</trans-unit>
+<trans-unit id="sad7b3ee1c22c6f56">
+  <source>Google Drive</source>
+  <target>Google Drive</target>
+</trans-unit>
+<trans-unit id="sea0a44273b7862cc">
+  <source>Contraseña (opcional)</source>
+  <target>Passphrase (optional)</target>
+</trans-unit>
+<trans-unit id="s71a1531b52373ee3">
+  <source>Sin contraseña, el archivo no se cifra.</source>
+  <target>Without a passphrase, the file is not encrypted.</target>
+</trans-unit>
+<trans-unit id="s2b4d32be0d1443b3">
+  <source>Descargar respaldo</source>
+  <target>Download backup</target>
+</trans-unit>
+<trans-unit id="sa2fe3f3b565f15f4">
+  <source>Cancelar</source>
+  <target>Cancel</target>
+</trans-unit>
+<trans-unit id="s58993aa3b03d38c7">
+  <source>Contraseña del respaldo</source>
+  <target>Backup passphrase</target>
+</trans-unit>
+<trans-unit id="sd8f030d7454346ba">
+  <source>Restaurar</source>
+  <target>Restore</target>
+</trans-unit>
+<trans-unit id="s3a99e3e624946615">
+  <source>Drive no está habilitado en esta instancia. El operador necesita registrar un OAuth client_id de Google.</source>
+  <target>Drive is not enabled on this instance. The operator needs to register a Google OAuth client_id.</target>
+</trans-unit>
+<trans-unit id="s653019d5ca8d22b6">
+  <source>Guarda un respaldo cifrado en tu propia cuenta de Drive. Markal nunca verá la contraseña ni los datos descifrados.</source>
+  <target>Save an encrypted backup to your own Drive account. Markal never sees the passphrase nor the decrypted data.</target>
+</trans-unit>
+<trans-unit id="s785cca92e8040dfd">
+  <source>Conectar Google Drive</source>
+  <target>Connect Google Drive</target>
+</trans-unit>
+<trans-unit id="s1e821e8e8b515f34">
+  <source>Si olvidas la contraseña no podemos descifrar tu respaldo. Guárdala en un lugar seguro.</source>
+  <target>If you forget the passphrase, we cannot decrypt your backup. Store it somewhere safe.</target>
+</trans-unit>
+<trans-unit id="s32e3c268864a2675">
+  <source>Última sincronización: <x id="0" equiv-text="${this.driveLastSync}"/></source>
+  <target>Last sync: <x id="0" equiv-text="${this.driveLastSync}"/></target>
+</trans-unit>
+<trans-unit id="s44f320b9608aabeb">
+  <source>Contraseña de cifrado</source>
+  <target>Encryption passphrase</target>
+</trans-unit>
+<trans-unit id="sd771ae5f8e20b195">
+  <source>Subir a Drive</source>
+  <target>Upload to Drive</target>
+</trans-unit>
+<trans-unit id="sa77790a768bc03c2">
+  <source>Descargar de Drive</source>
+  <target>Download from Drive</target>
+</trans-unit>
+<trans-unit id="s60a9838dc9b4aa5c">
+  <source>Desconectar</source>
+  <target>Disconnect</target>
+</trans-unit>
 </body>
 </file>
 </xliff>
