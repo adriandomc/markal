@@ -63,30 +63,32 @@ import "../styles.scss";
         position: relative;
         padding: 1.25rem 1.5rem 1.75rem;
         text-align: center;
-        font-size: 0.78rem;
+        font-size: 0.82rem;
         color: var(--muted);
         display: flex;
         justify-content: center;
-        gap: 1rem;
+        gap: 1.25rem;
         flex-wrap: wrap;
       }
       .site-footer a {
         color: inherit;
-        text-decoration: none;
+        text-decoration: underline;
+        text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+        text-underline-offset: 3px;
       }
       .site-footer a:hover,
       .site-footer a:focus-visible {
         color: var(--ink);
-        text-decoration: underline;
-        text-underline-offset: 3px;
+        text-decoration-color: currentColor;
       }
     </style>
   </head>
   <body>
     <markal-app></markal-app>
     <footer class="site-footer">
-      <a href="/privacy" data-locale-content="es">Privacidad</a>
-      <a href="/privacy" data-locale-content="en">Privacy</a>
+      <a href="https://markal.app/privacy" rel="privacy-policy">
+        Política de privacidad · Privacy policy
+      </a>
       <a
         href="https://github.com/adriandomc/markal"
         target="_blank"
