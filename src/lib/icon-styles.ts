@@ -30,8 +30,20 @@ export const iconStyles = css`
     content: "\\e1ca";
   }
 
+  .ph.ph-copy-simple::before {
+    content: "\\e1cc";
+  }
+
   .ph.ph-export::before {
     content: "\\eaf0";
+  }
+
+  .ph.ph-link-simple::before {
+    content: "\\e2e6";
+  }
+
+  .ph.ph-share-network::before {
+    content: "\\e408";
   }
 
   .ph.ph-file-pdf::before {
