@@ -252,6 +252,30 @@ class CalendarStore {
     return placeholderId;
   }
 
+  /**
+   * Ensure a per-calendar Y.Doc exists locally for the given id. Used by
+   * the backup restore path to materialize Y.Docs before applying their
+   * updates. Does NOT touch the index — the caller is expected to have
+   * already applied the index update (or to do so afterwards).
+   */
+  async ensureCalendarDoc(id: string): Promise<Y.Doc> {
+    let entry = this.calendars.get(id);
+    if (!entry) {
+      const doc = new Y.Doc();
+      const persistence = new IndexeddbPersistence(calendarIdbName(id), doc);
+      await persistence.whenSynced;
+      entry = { doc, persistence };
+      this.calendars.set(id, entry);
+      this.wireUpdateListener(id, doc);
+    }
+    return entry.doc;
+  }
+
+  /** Force a snapshot broadcast (used after bulk updates like backup restore). */
+  forceNotify(): void {
+    this.notify();
+  }
+
   // ===== Internals =====
 
   private indexIds(): string[] {
@@ -517,6 +541,23 @@ export function setShareInfo(id: string, info: ShareInfo | null): void {
 export async function ensureSharedCalendar(roomId: string): Promise<string> {
   if (!store) throw new Error("Storage not initialized");
   return store.ensureSharedCalendar(roomId);
+}
+
+export function getIndexDoc(): Y.Doc | undefined {
+  return store?.indexDoc;
+}
+
+export async function ensureCalendarDoc(id: string): Promise<Y.Doc> {
+  if (!store) throw new Error("Storage not initialized");
+  return store.ensureCalendarDoc(id);
+}
+
+export function notifyCollectionChanged(): void {
+  store?.forceNotify();
+}
+
+export function getCollectionSnapshot(): CalendarCollection | null {
+  return store?.getCollection() ?? null;
 }
 
 // ===== Read helpers: Y.js → JSON =====
