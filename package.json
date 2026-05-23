@@ -13,7 +13,9 @@
     "@phosphor-icons/web": "2.1.2",
     "@webcomponents/template-shadowroot": "^0.2.1",
     "astro": "^6.3.6",
-    "lit": "3.3.3"
+    "lit": "3.3.3",
+    "y-indexeddb": "^9.0.12",
+    "yjs": "^13.6.28"
   },
   "devDependencies": {
     "@lit/localize-tools": "^0.8.0",

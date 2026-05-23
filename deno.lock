@@ -17,7 +17,9 @@
     "npm:lit@3.3.3": "3.3.3",
     "npm:playwright@1.60.0": "1.60.0",
     "npm:sass@^1.99.0": "1.99.0",
-    "npm:typescript@6.0.3": "6.0.3"
+    "npm:typescript@6.0.3": "6.0.3",
+    "npm:y-indexeddb@^9.0.12": "9.0.12_yjs@13.6.30",
+    "npm:yjs@^13.6.28": "13.6.30"
   },
   "npm": {
     "@astrojs/check@0.9.9_typescript@6.0.3": {
@@ -1679,6 +1681,9 @@
         "is-inside-container"
       ]
     },
+    "isomorphic.js@0.2.5": {
+      "integrity": "sha512-PIeMbHqMt4DnUP3MA/Flc0HElYjMXArsw1qwJZcm9sqR8mq3l8NYizFMty0pWwE/tzIGH3EKK5+jes5mAr85yw=="
+    },
     "js-yaml@4.1.1": {
       "integrity": "sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==",
       "dependencies": [
@@ -1709,6 +1714,13 @@
     },
     "kleur@4.1.5": {
       "integrity": "sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ=="
+    },
+    "lib0@0.2.117": {
+      "integrity": "sha512-DeXj9X5xDCjgKLU/7RR+/HQEVzuuEUiwldwOGsHK/sfAfELGWEyTcf0x+uOvCvK3O2zPmZePXWL85vtia6GyZw==",
+      "dependencies": [
+        "isomorphic.js"
+      ],
+      "bin": true
     },
     "lit-element@4.2.2": {
       "integrity": "sha512-aFKhNToWxoyhkNDmWZwEva2SlQia+jfG0fjIWV//YeTaWrVnOxD89dPKfigCUspXFmjzOEUQpOkejH5Ly6sG0w==",
@@ -3042,6 +3054,13 @@
     "xxhash-wasm@1.1.0": {
       "integrity": "sha512-147y/6YNh+tlp6nd/2pWq38i9h6mz/EuQ6njIrmW8D1BS5nCqs0P6DG+m6zTGnNz5I+uhZ0SHxBs9BsPrwcKDA=="
     },
+    "y-indexeddb@9.0.12_yjs@13.6.30": {
+      "integrity": "sha512-9oCFRSPPzBK7/w5vOkJBaVCQZKHXB/v6SIT+WYhnJxlEC61juqG0hBrAf+y3gmSMLFLwICNH9nQ53uscuse6Hg==",
+      "dependencies": [
+        "lib0",
+        "yjs"
+      ]
+    },
     "y18n@5.0.8": {
       "integrity": "sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA=="
     },
@@ -3088,6 +3107,12 @@
         "yargs-parser@21.1.1"
       ]
     },
+    "yjs@13.6.30": {
+      "integrity": "sha512-vv/9h42eCMC81ZHDFswuu/MKzkl/vyq1BhaNGfHyOonwlG4CJbQF4oiBBJPvfdeCt/PlVDWh7Nov9D34YY09uQ==",
+      "dependencies": [
+        "lib0"
+      ]
+    },
     "yocto-queue@1.2.2": {
       "integrity": "sha512-4LCcse/U2MHZ63HAJVE+v71o7yOdIe4cZ70Wpf8D/IyjDKYQLV5GD46B+hSTjJsvV5PztjvHoU580EftxjDZFQ=="
     },
@@ -3114,7 +3139,9 @@
         "npm:lit@3.3.3",
         "npm:playwright@1.60.0",
         "npm:sass@^1.99.0",
-        "npm:typescript@6.0.3"
+        "npm:typescript@6.0.3",
+        "npm:y-indexeddb@^9.0.12",
+        "npm:yjs@^13.6.28"
       ]
     }
   }
