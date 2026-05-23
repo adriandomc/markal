@@ -81,4 +81,36 @@ export const iconStyles = css`
   .ph.ph-x::before {
     content: "\\e4f6";
   }
+
+  .ph.ph-cloud-arrow-up::before {
+    content: "\\e1ae";
+  }
+
+  .ph.ph-cloud-arrow-down::before {
+    content: "\\e1ac";
+  }
+
+  .ph.ph-download-simple::before {
+    content: "\\e20c";
+  }
+
+  .ph.ph-upload-simple::before {
+    content: "\\e4c0";
+  }
+
+  .ph.ph-google-drive-logo::before {
+    content: "\\e8f6";
+  }
+
+  .ph.ph-key::before {
+    content: "\\e2d6";
+  }
+
+  .ph.ph-sign-out::before {
+    content: "\\e42a";
+  }
+
+  .ph.ph-floppy-disk::before {
+    content: "\\e248";
+  }
 `;
