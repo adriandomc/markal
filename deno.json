@@ -9,6 +9,8 @@
     "test": "deno test --allow-env",
     "i18n:extract": "deno run -A npm:@lit/localize-tools/bin/lit-localize.js extract",
     "i18n:build": "deno run -A npm:@lit/localize-tools/bin/lit-localize.js build",
+    "signal:dev": "deno run --allow-net --allow-env --watch server/signaling/main.ts",
+    "signal:start": "deno run --allow-net --allow-env server/signaling/main.ts",
     "browsers": "playwright install chromium",
     "favicons": "deno run -A npm:create-favicon ./src/assets/logo.svg ./public"
   },

@@ -43,6 +43,7 @@ import {
   getSelectedDocument,
   loadCalendarCollection,
   saveCalendarCollection,
+  subscribeToCollectionChanges,
 } from "./lib/storage.ts";
 
 const SIDEBAR_STORAGE_KEY = "markal.sidebar.open";
@@ -81,6 +82,7 @@ export class MarkalApp extends LitElement {
   private mobileQuery: MediaQueryList | null = null;
   private mobileListener: ((event: MediaQueryListEvent) => void) | null = null;
   private restoreFocusElement: HTMLElement | null = null;
+  private unsubscribeCollection: (() => void) | null = null;
 
   constructor() {
     super();
@@ -166,6 +168,21 @@ export class MarkalApp extends LitElement {
       this.collection = collection;
       this.selectedLegendId =
         getSelectedDocument(collection).legends[0]?.id ?? "";
+      this.unsubscribeCollection = subscribeToCollectionChanges(
+        (remoteCollection) => {
+          // Triggered when the Y.Doc receives a non-local update
+          // (peer sync in Phase 4, cloud restore in Phase 5).
+          this.collection = remoteCollection;
+          if (
+            !remoteCollection.documents.find((d) =>
+              d.id === remoteCollection.selectedId
+            )?.legends.find((l) => l.id === this.selectedLegendId)
+          ) {
+            const selected = getSelectedDocument(remoteCollection);
+            this.selectedLegendId = selected.legends[0]?.id ?? "";
+          }
+        },
+      );
     } finally {
       this.loading = false;
     }
@@ -177,6 +194,10 @@ export class MarkalApp extends LitElement {
       this.mobileQuery.removeEventListener("change", this.mobileListener);
     }
     globalThis.removeEventListener("keydown", this.handleGlobalKeydown);
+    if (this.unsubscribeCollection) {
+      this.unsubscribeCollection();
+      this.unsubscribeCollection = null;
+    }
   }
 
   private toggleSidebar = (): void => {
