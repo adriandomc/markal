@@ -13,7 +13,6 @@ import "./components/markal-date-range-control.ts";
 import "./components/markal-legend-panel.ts";
 import "./components/markal-settings-modal.ts";
 import "./components/markal-info-modal.ts";
-import "./components/markal-share-modal.ts";
 import "./components/markal-export-modal.ts";
 import "./components/markal-calendarios-modal.ts";
 import "./components/markal-peers-modal.ts";
@@ -112,7 +111,7 @@ export class MarkalApp extends LitElement {
     settingsOpen: { state: true },
     exportOpen: { state: true },
     calendariosOpen: { state: true },
-    shareOpen: { state: true },
+    sharingCalendarId: { state: true },
     shareLink: { state: true },
     shareCopied: { state: true },
     loading: { state: true },
@@ -141,7 +140,7 @@ export class MarkalApp extends LitElement {
   settingsOpen = false;
   exportOpen = false;
   calendariosOpen = false;
-  shareOpen = false;
+  sharingCalendarId: string | null = null;
   shareLink: ShareLink | null = null;
   shareCopied = false;
   loading = true;
@@ -381,6 +380,7 @@ export class MarkalApp extends LitElement {
 
   private closeCalendarios = (): void => {
     this.calendariosOpen = false;
+    this.closeShareView();
   };
 
   private openLegendSheet = (): void => {
@@ -457,11 +457,12 @@ export class MarkalApp extends LitElement {
       : "https://markal.app";
     this.shareLink = buildShareLink(origin, info.roomId, info.encryptionKey);
     this.shareCopied = false;
-    this.shareOpen = true;
+    this.sharingCalendarId = calendarId;
   };
 
-  private closeShare = (): void => {
-    this.shareOpen = false;
+  private closeShareView = (): void => {
+    this.sharingCalendarId = null;
+    this.shareLink = null;
     this.shareCopied = false;
   };
 
@@ -478,8 +479,7 @@ export class MarkalApp extends LitElement {
   private stopSharing = (calendarId: string): void => {
     disconnectShared(calendarId);
     setShareInfo(calendarId, null);
-    this.shareLink = null;
-    this.shareOpen = false;
+    this.closeShareView();
   };
 
   private setBackupMessage(message: string, isError: boolean): void {
@@ -654,9 +654,9 @@ export class MarkalApp extends LitElement {
       return;
     }
 
-    if (this.shareOpen) {
+    if (this.calendariosOpen && this.sharingCalendarId) {
       event.preventDefault();
-      this.closeShare();
+      this.closeShareView();
       return;
     }
 
@@ -804,28 +804,9 @@ export class MarkalApp extends LitElement {
         : nothing}
       ${this.renderSettingsModal()}
       ${this.renderInfoModal()}
-      ${this.renderShareModal()}
       ${this.renderExportModal()}
       ${this.renderCalendariosModal()}
       ${this.renderPeersModal()}
-    `;
-  }
-
-  private renderShareModal() {
-    const link = this.shareLink;
-    const selectedDoc = this.collection?.documents.find((d) =>
-      Boolean(link) && getShareInfo(d.id)?.roomId === link?.roomId
-    );
-    return html`
-      <markal-share-modal
-        ?open="${this.shareOpen}"
-        .shareLink="${link}"
-        ?shareCopied="${this.shareCopied}"
-        .currentCalendarId="${selectedDoc?.id ?? null}"
-        @markal-close="${this.closeShare}"
-        @share-copy="${this.copyShareLink}"
-        @share-stop="${(e: CustomEvent<string>) => this.stopSharing(e.detail)}"
-      ></markal-share-modal>
     `;
   }
 
@@ -991,6 +972,9 @@ export class MarkalApp extends LitElement {
         .documents="${documents}"
         .selectedId="${this.collection?.selectedId ?? ""}"
         .sharedIds="${sharedIds}"
+        .sharingCalendarId="${this.sharingCalendarId}"
+        .shareLink="${this.shareLink}"
+        ?shareCopied="${this.shareCopied}"
         @markal-close="${this.closeCalendarios}"
         @calendar-create="${this.createCalendar}"
         @calendar-select="${(e: CustomEvent<string>) =>
@@ -1004,6 +988,9 @@ export class MarkalApp extends LitElement {
         @calendar-share="${(e: CustomEvent<string>) =>
           this.openShareForCalendar(e.detail)}"
         @calendar-reorder="${this.reorderCalendars}"
+        @share-back="${this.closeShareView}"
+        @share-copy="${this.copyShareLink}"
+        @share-stop="${(e: CustomEvent<string>) => this.stopSharing(e.detail)}"
       ></markal-calendarios-modal>
     `;
   }

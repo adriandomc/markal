@@ -1,3 +1,5 @@
+@use "../styles/mixins" as *;
+
 :host {
   display: contents;
 }
@@ -13,4 +15,84 @@
   align-content: start;
   gap: 0.5rem;
   min-height: 0;
+}
+
+.share-back {
+  @include control-reset;
+  align-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  transition: color 140ms ease, background 140ms ease;
+
+  &:hover {
+    color: var(--ink);
+    background: var(--surface-muted);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  .ph {
+    font-size: 1rem;
+  }
+}
+
+.share-help {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.share-privacy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.share-link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.share-link-input {
+  @include text-input;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.84rem;
+  min-height: 2.375rem;
+  padding: 0.5rem 0.625rem;
+  user-select: all;
+}
+
+.share-status {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.share-actions {
+  display: grid;
+  margin-top: 0.5rem;
+}
+
+.action-button {
+  @include action-button;
+}
+
+.share-stop {
+  width: 100%;
 }
