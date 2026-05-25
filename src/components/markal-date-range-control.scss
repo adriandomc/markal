@@ -14,19 +14,26 @@
 
 .date-chip {
   @include bordered-control;
-  min-width: 9.375rem;
-  padding: 0.5625rem 0.625rem;
-  text-align: left;
-  cursor: pointer;
+  min-width: 11rem;
+  padding: 0.4375rem 0.5rem 0.4375rem 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
   transition:
     border-color 160ms ease,
     transform 160ms ease,
     background 160ms ease;
 
-  &:hover,
-  &[aria-expanded="true"] {
+  &:focus-within {
     border-color: var(--ink);
     transform: translateY(-1px);
+  }
+
+  // Tinted border while the user is editing an incomplete/unparseable value.
+  // On focusout the chip self-heals (snap-back to last good date), so this
+  // is mostly a hint *during* typing.
+  &[data-invalid="true"]:focus-within {
+    border-color: color-mix(in srgb, #c8201f 55%, var(--border-strong));
   }
 }
 
@@ -34,14 +41,58 @@
   display: block;
   color: var(--muted);
   font-size: 0.72rem;
-  margin-bottom: 0.125rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.chip-value {
+.chip-fields {
+  display: flex;
+  align-items: center;
+  gap: 0.0625rem;
+}
+
+.num {
+  @include control-reset;
+  background: transparent;
+  text-align: center;
   font-size: 0.9rem;
   font-weight: 650;
+  padding: 0.125rem 0.0625rem;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  border-radius: 3px;
+  caret-color: var(--ink);
+  cursor: text;
+
+  &::placeholder {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  &:focus {
+    outline: none;
+    background: var(--surface-muted);
+  }
+
+  &.day,
+  &.month {
+    width: 1.5em;
+  }
+
+  &.year {
+    width: 2.75em;
+    min-width: 2.75em;
+  }
+}
+
+.sep {
+  color: var(--muted);
+  font-weight: 650;
+  user-select: none;
+}
+
+.chip-calendar {
+  margin-left: auto;
 }
 
 .picker {
