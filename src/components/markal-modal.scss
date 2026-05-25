@@ -27,7 +27,10 @@
   transform: translate(-50%, -50%) scale(0.96);
   opacity: 0;
   pointer-events: none;
-  width: min(28rem, calc(100vw - 2rem));
+  width: min(32rem, calc(100vw - 2rem));
+  // Reserve a comfortable floor height across every modal so switching tabs
+  // (or opening different modals) does not jitter the dialog box.
+  height: min(38rem, calc(100vh - 2rem));
   max-height: calc(100vh - 2rem);
   display: flex;
   flex-direction: column;
@@ -48,11 +51,11 @@
 }
 
 :host([size="sm"]) .dialog {
-  width: min(26rem, calc(100vw - 2rem));
+  width: min(28rem, calc(100vw - 2rem));
 }
 
 :host([size="lg"]) .dialog {
-  width: min(30rem, calc(100vw - 2rem));
+  width: min(38rem, calc(100vw - 2rem));
 }
 
 .header {
@@ -62,6 +65,7 @@
   gap: 0.5rem;
   padding: 0.75rem 0.875rem 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
 }
 
 .title {
@@ -74,4 +78,13 @@
   display: grid;
   gap: 0.875rem;
   overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-content: start;
+}
+
+::slotted([slot="footer"]) {
+  flex: 0 0 auto;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
 }

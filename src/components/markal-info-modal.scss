@@ -1,0 +1,126 @@
+@use "../styles/mixins" as *;
+
+:host {
+  display: contents;
+}
+
+.info-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0 1.25rem;
+}
+
+.info-brand-logo {
+  width: 4.5rem;
+  height: 4.5rem;
+  display: block;
+}
+
+.info-brand-name {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.info-description {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.info-privacy {
+  margin: 0 0 1.25rem;
+  padding: 0.875rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.info-privacy-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+
+  .ph {
+    font-size: 1.05rem;
+    color: var(--muted);
+  }
+}
+
+.info-privacy-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+
+  li {
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+}
+
+.info-privacy-link {
+  align-self: start;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.info-meta {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.info-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+}
+
+.info-meta-label {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.info-meta-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.info-link {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+
+.info-modal-footer {
+  p {
+    margin: 0;
+    text-align: center;
+  }
+}

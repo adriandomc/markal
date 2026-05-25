@@ -1,0 +1,45 @@
+@use "../styles/mixins" as *;
+
+:host {
+  display: block;
+}
+
+.tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.tab {
+  @include control-reset;
+  background: transparent;
+  padding: 0.5625rem 0.125rem;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-weight: 720;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease;
+
+  &:hover {
+    color: var(--ink);
+  }
+
+  &.active {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.panels {
+  display: block;
+}

@@ -1,0 +1,55 @@
+@use "../styles/mixins" as *;
+
+:host {
+  display: contents;
+}
+
+.share-help {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.share-privacy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.share-link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.share-link-input {
+  @include text-input;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.84rem;
+  min-height: 2.375rem;
+  padding: 0.5rem 0.625rem;
+  user-select: all;
+}
+
+.share-status {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.share-actions {
+  display: grid;
+  margin-top: 0.5rem;
+}
+
+.action-button {
+  @include action-button;
+}
+
+.share-stop {
+  width: 100%;
+}

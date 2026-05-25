@@ -5,20 +5,22 @@ import {
   changeLocale as applyLocaleChange,
   getLocale,
   initLocalization,
-  LOCALE_OPTIONS,
   type LocaleCode,
 } from "./i18n/setup.ts";
 import "./components/markal-calendar-board.ts";
-import "./components/markal-calendar-item.ts";
 import "./components/markal-icon-button.ts";
-import "./components/markal-modal.ts";
-import "./components/markal-radio-group.ts";
-import "./components/markal-settings-row.ts";
-import "./components/markal-switch.ts";
 import "./components/markal-date-range-control.ts";
 import "./components/markal-legend-panel.ts";
+import "./components/markal-settings-modal.ts";
+import "./components/markal-info-modal.ts";
+import "./components/markal-share-modal.ts";
+import "./components/markal-export-modal.ts";
+import "./components/markal-calendarios-modal.ts";
+import "./components/markal-peers-modal.ts";
 import type { DayMarkDetail } from "./components/markal-calendar-board.ts";
 import type { LegendChangeDetail } from "./components/markal-legend-panel.ts";
+import type { ExportFormat } from "./components/markal-export-modal.ts";
+import type { CalendarRenamePayload } from "./components/markal-calendarios-modal.ts";
 import type {
   CalendarCollection,
   CalendarDocument,
@@ -34,7 +36,6 @@ import {
 import { iconStyles } from "./lib/icon-styles.ts";
 import { localStyles } from "./lib/lit-styles.ts";
 import {
-  ABSOLUTE_MAX_MARKS_PER_DAY,
   applyLegendToDate,
   cleanMarks,
   clampMaxMarksPerDay,
@@ -66,7 +67,6 @@ import {
   disconnectShared,
   getConnectedPeerCount,
   getConnectedPeers,
-  type PeerInfo,
   setLocalUserName,
   subscribeToAwarenessChanges,
   subscribeToPeerChanges,
@@ -430,8 +430,7 @@ export class MarkalApp extends LitElement {
     this.peersOpen = false;
   };
 
-  private handleUserNameInput = (event: InputEvent): void => {
-    const value = (event.target as HTMLInputElement).value;
+  private applyUserName = (value: string): void => {
     this.userName = value;
     if (this.userNameDebounce) clearTimeout(this.userNameDebounce);
     this.userNameDebounce = setTimeout(() => {
@@ -526,18 +525,7 @@ export class MarkalApp extends LitElement {
     }
   };
 
-  private triggerImport = (): void => {
-    const input = this.shadowRoot?.querySelector<HTMLInputElement>(
-      ".backup-import-input",
-    );
-    input?.click();
-  };
-
-  private handleImportFileChosen = async (event: Event): Promise<void> => {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
+  private applyImportFile = async (file: File): Promise<void> => {
     try {
       this.backupBusy = "import";
       this.clearBackupMessage();
@@ -813,9 +801,13 @@ export class MarkalApp extends LitElement {
       </main>
       ${this.isMobile
         ? this.renderLegendDock(document.legends)
-        : nothing} ${this.renderInfoModal()} ${this.renderSettingsModal()}
-      ${this.renderExportModal()} ${this.renderShareModal()}
-      ${this.renderCalendariosModal()} ${this.renderPeersModal()}
+        : nothing}
+      ${this.renderSettingsModal()}
+      ${this.renderInfoModal()}
+      ${this.renderShareModal()}
+      ${this.renderExportModal()}
+      ${this.renderCalendariosModal()}
+      ${this.renderPeersModal()}
     `;
   }
 
@@ -824,501 +816,92 @@ export class MarkalApp extends LitElement {
     const selectedDoc = this.collection?.documents.find((d) =>
       Boolean(link) && getShareInfo(d.id)?.roomId === link?.roomId
     );
-
     return html`
-      <markal-modal
+      <markal-share-modal
         ?open="${this.shareOpen}"
-        label="${msg("Compartir calendario")}"
-        size="md"
+        .shareLink="${link}"
+        ?shareCopied="${this.shareCopied}"
+        .currentCalendarId="${selectedDoc?.id ?? null}"
         @markal-close="${this.closeShare}"
-      >
-        <p class="share-help">
-          ${msg(
-            "Cualquiera con este enlace podrá ver y editar este calendario en tiempo real. Tus otros calendarios no se comparten.",
-          )}
-        </p>
-        <div class="share-link-row">
-          <input
-            class="share-link-input"
-            type="text"
-            readonly
-            .value="${link?.url ?? ""}"
-            aria-label="${msg("Enlace para compartir")}"
-            @focus="${(e: FocusEvent) =>
-              (e.target as HTMLInputElement).select()}"
-          />
-          <markal-icon-button
-            icon="copy-simple"
-            label="${this.shareCopied ? msg("Copiado") : msg("Copiar")}"
-            @click="${this.copyShareLink}"
-          ></markal-icon-button>
-        </div>
-        ${this.shareCopied
-          ? html`<p class="share-status">${msg("Enlace copiado")}</p>`
-          : nothing}
-        <p class="share-privacy">
-          ${msg(
-            "El cifrado de extremo a extremo viaja en el fragmento (#) del enlace, que no llega a ningún servidor.",
-          )}
-        </p>
-        ${selectedDoc
-          ? html`
-            <div class="share-actions">
-              <button
-                class="action-button share-stop"
-                type="button"
-                @click="${() => this.stopSharing(selectedDoc.id)}"
-              >
-                <i class="ph ph-link-simple"></i>
-                ${msg("Dejar de compartir")}
-              </button>
-            </div>
-          `
-          : nothing}
-      </markal-modal>
+        @share-copy="${this.copyShareLink}"
+        @share-stop="${(e: CustomEvent<string>) => this.stopSharing(e.detail)}"
+      ></markal-share-modal>
     `;
   }
 
   private renderExportModal() {
     return html`
-      <markal-modal
+      <markal-export-modal
         ?open="${this.exportOpen}"
-        label="${msg("Exportar calendario")}"
-        size="sm"
+        .exportMessage="${this.exportMessage}"
         @markal-close="${this.closeExport}"
-      >
-        <p class="export-modal-hint">
-          ${msg("Elige el formato en el que quieres descargar tu calendario.")}
-        </p>
-        <div class="export-actions">
-          <button
-            class="action-button"
-            type="button"
-            @click="${() => this.exportCalendar("png")}"
-          >
-            <i class="ph ph-file-png"></i>
-            PNG
-          </button>
-          <button
-            class="action-button"
-            type="button"
-            @click="${() => this.exportCalendar("pdf")}"
-          >
-            <i class="ph ph-file-pdf"></i>
-            PDF
-          </button>
-        </div>
-        <div class="export-status" role="status">${this.exportMessage}</div>
-      </markal-modal>
+        @export-format="${(e: CustomEvent<ExportFormat>) =>
+          this.exportCalendar(e.detail)}"
+      ></markal-export-modal>
     `;
   }
 
   private renderSettingsModal() {
-    const settings = this.selectedDocument.settings;
-    const options = Array.from(
-      { length: ABSOLUTE_MAX_MARKS_PER_DAY },
-      (_, index) => index + 1,
-    );
-
     return html`
-      <markal-modal
+      <markal-settings-modal
         ?open="${this.settingsOpen}"
-        label="${msg("Configuración")}"
-        size="lg"
+        .userName="${this.userName}"
+        .settings="${this.selectedDocument.settings}"
+        .currentLocale="${this.currentLocale}"
+        ?driveConfigured="${this.driveConfigured}"
+        ?driveConnected="${this.driveConnected}"
+        .drivePassphrase="${this.drivePassphrase}"
+        .driveLastSync="${this.driveLastSync}"
+        ?exportPanelOpen="${this.exportPanelOpen}"
+        .exportPassphrase="${this.exportPassphrase}"
+        .pendingImportEnvelope="${this.pendingImportEnvelope}"
+        .importPassphrase="${this.importPassphrase}"
+        .backupMessage="${this.backupMessage}"
+        ?backupError="${this.backupError}"
+        .backupBusy="${this.backupBusy}"
         @markal-close="${this.closeSettings}"
-      >
-        <markal-settings-row
-          rowTitle="${msg("Tu nombre")}"
-          helpText="${msg(
-            "Aparece para las personas con quienes compartes calendarios.",
-          )}"
-        >
-          <input
-            class="user-name-input"
-            type="text"
-            aria-label="${msg("Tu nombre")}"
-            .value="${this.userName}"
-            @input="${this.handleUserNameInput}"
-          />
-        </markal-settings-row>
-        <markal-settings-row
-          rowTitle="${msg("Mostrar marcas de otros meses")}"
-          helpText="${msg(
-            "Visualiza las marcas en los días que se asoman desde meses adyacentes.",
-          )}"
-        >
-          <markal-switch
-            ?checked="${settings.showOutMonthMarks}"
-            label="${msg("Mostrar marcas de otros meses")}"
-            @change="${(event: CustomEvent<boolean>) =>
-              this.updateSettings({ showOutMonthMarks: event.detail })}"
-          ></markal-switch>
-        </markal-settings-row>
-        <markal-settings-row
-          stacked
-          rowTitle="${msg("Leyendas por día")}"
-          helpText="${msg(
-            "Máximo de leyendas que puedes apilar en una misma fecha.",
-          )}"
-        >
-          <markal-radio-group
-            .options="${options.map((value) => ({
-              value,
-              label: String(value),
-            }))}"
-            .value="${settings.maxMarksPerDay}"
-            groupLabel="${msg("Leyendas por día")}"
-            @markal-change="${(event: CustomEvent<number>) =>
-              this.updateSettings({ maxMarksPerDay: event.detail })}"
-          ></markal-radio-group>
-        </markal-settings-row>
-        ${this.renderLanguageRow()} ${this.renderBackupSection()}
-      </markal-modal>
-    `;
-  }
-
-  private renderLanguageRow() {
-    return html`
-      <markal-settings-row
-        stacked
-        rowTitle="${msg("Idioma")}"
-        helpText="${msg("Selecciona el idioma de la interfaz.")}"
-      >
-        <markal-radio-group
-          .options="${LOCALE_OPTIONS.map((option) => ({
-            value: option.code,
-            label: option.label,
-          }))}"
-          .value="${this.currentLocale}"
-          groupLabel="${msg("Idioma")}"
-          @markal-change="${(event: CustomEvent<string>) =>
-            this.changeLocale(event.detail as LocaleCode)}"
-        ></markal-radio-group>
-      </markal-settings-row>
-    `;
-  }
-
-  private renderBackupSection() {
-    return html`
-      <markal-settings-row
-        stacked
-        rowTitle="${msg("Respaldo y sincronización")}"
-        helpText="${msg(
-          "Exporta tus datos como archivo o sincroniza con tu propia nube. Markal nunca toca tus datos en sus servidores.",
-        )}"
-      >
-        <div class="backup">
-          <div class="backup-block">
-            <div class="backup-block-title">
-              <i class="ph ph-floppy-disk"></i>
-              ${msg("Archivo local")}
-            </div>
-            ${this.exportPanelOpen
-              ? this.renderExportPanel()
-              : html`
-                <button
-                  class="backup-btn"
-                  type="button"
-                  ?disabled="${this.backupBusy !== null}"
-                  @click="${this.openExportPanel}"
-                >
-                  <i class="ph ph-download-simple"></i>
-                  ${msg("Exportar a archivo")}
-                </button>
-              `}
-            <button
-              class="backup-btn"
-              type="button"
-              ?disabled="${this.backupBusy !== null ||
-                this.pendingImportEnvelope !== null}"
-              @click="${this.triggerImport}"
-            >
-              <i class="ph ph-upload-simple"></i>
-              ${msg("Importar desde archivo")}
-            </button>
-            ${this.pendingImportEnvelope
-              ? this.renderImportPanel()
-              : nothing}
-            <input
-              class="backup-import-input"
-              type="file"
-              accept="application/json,.markal,.json"
-              hidden
-              @change="${this.handleImportFileChosen}"
-            />
-          </div>
-          <div class="backup-block">
-            <div class="backup-block-title">
-              <i class="ph ph-google-drive-logo"></i>
-              ${msg("Google Drive")}
-            </div>
-            ${this.renderDrivePanel()}
-          </div>
-          ${this.backupMessage
-            ? html`
-              <div
-                class="${`backup-status${this.backupError ? " is-error" : ""}`}"
-                role="status"
-              >
-                ${this.backupMessage}
-              </div>
-            `
-            : nothing}
-        </div>
-      </markal-settings-row>
-    `;
-  }
-
-  private renderExportPanel() {
-    return html`
-      <div class="backup-panel">
-        <label class="backup-field">
-          <span class="backup-field-label">
-            ${msg("Contraseña (opcional)")}
-          </span>
-          <input
-            class="backup-input"
-            type="password"
-            autocomplete="new-password"
-            .value="${this.exportPassphrase}"
-            @input="${(event: Event) => {
-              this.exportPassphrase = (event.target as HTMLInputElement).value;
-            }}"
-          />
-          <span class="backup-field-hint">
-            ${msg("Sin contraseña, el archivo no se cifra.")}
-          </span>
-        </label>
-        <div class="backup-panel-actions">
-          <button
-            class="backup-btn primary"
-            type="button"
-            ?disabled="${this.backupBusy !== null}"
-            @click="${this.confirmExport}"
-          >
-            ${msg("Descargar respaldo")}
-          </button>
-          <button
-            class="backup-btn ghost"
-            type="button"
-            @click="${this.closeExportPanel}"
-          >
-            ${msg("Cancelar")}
-          </button>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderImportPanel() {
-    return html`
-      <div class="backup-panel">
-        <label class="backup-field">
-          <span class="backup-field-label">
-            ${msg("Contraseña del respaldo")}
-          </span>
-          <input
-            class="backup-input"
-            type="password"
-            autocomplete="off"
-            .value="${this.importPassphrase}"
-            @input="${(event: Event) => {
-              this.importPassphrase = (event.target as HTMLInputElement).value;
-            }}"
-          />
-        </label>
-        <div class="backup-panel-actions">
-          <button
-            class="backup-btn primary"
-            type="button"
-            ?disabled="${this.backupBusy !== null}"
-            @click="${this.confirmImportPassphrase}"
-          >
-            ${msg("Restaurar")}
-          </button>
-          <button
-            class="backup-btn ghost"
-            type="button"
-            @click="${this.cancelImport}"
-          >
-            ${msg("Cancelar")}
-          </button>
-        </div>
-      </div>
-    `;
-  }
-
-  private renderDrivePanel() {
-    if (!this.driveConfigured) {
-      return html`
-        <p class="backup-help">
-          ${msg(
-            "Drive no está habilitado en esta instancia. El operador necesita registrar un OAuth client_id de Google.",
-          )}
-        </p>
-      `;
-    }
-    if (!this.driveConnected) {
-      return html`
-        <p class="backup-help">
-          ${msg(
-            "Guarda un respaldo cifrado en tu propia cuenta de Drive. Markal nunca verá la contraseña ni los datos descifrados.",
-          )}
-        </p>
-        <button
-          class="backup-btn primary"
-          type="button"
-          @click="${this.connectDrive}"
-        >
-          <i class="ph ph-google-drive-logo"></i>
-          ${msg("Conectar Google Drive")}
-        </button>
-      `;
-    }
-    return html`
-      <p class="backup-help">
-        ${msg(
-          "Si olvidas la contraseña no podemos descifrar tu respaldo. Guárdala en un lugar seguro.",
-        )}
-      </p>
-      ${this.driveLastSync
-        ? html`
-          <p class="backup-meta">
-            ${msg(str`Última sincronización: ${this.driveLastSync}`)}
-          </p>
-        `
-        : nothing}
-      <label class="backup-field">
-        <span class="backup-field-label">
-          ${msg("Contraseña de cifrado")}
-        </span>
-        <input
-          class="backup-input"
-          type="password"
-          autocomplete="off"
-          .value="${this.drivePassphrase}"
-          @input="${(event: Event) => {
-            this.drivePassphrase = (event.target as HTMLInputElement).value;
-          }}"
-        />
-      </label>
-      <div class="backup-panel-actions">
-        <button
-          class="backup-btn primary"
-          type="button"
-          ?disabled="${this.backupBusy !== null}"
-          @click="${this.pushDrive}"
-        >
-          <i class="ph ph-cloud-arrow-up"></i>
-          ${msg("Subir a Drive")}
-        </button>
-        <button
-          class="backup-btn"
-          type="button"
-          ?disabled="${this.backupBusy !== null}"
-          @click="${this.pullDrive}"
-        >
-          <i class="ph ph-cloud-arrow-down"></i>
-          ${msg("Descargar de Drive")}
-        </button>
-        <button
-          class="backup-btn ghost"
-          type="button"
-          @click="${this.disconnectDriveAction}"
-        >
-          <i class="ph ph-sign-out"></i>
-          ${msg("Desconectar")}
-        </button>
-      </div>
+        @user-name-input="${(e: CustomEvent<string>) =>
+          this.applyUserName(e.detail)}"
+        @settings-change="${(e: CustomEvent<Partial<CalendarSettings>>) =>
+          this.updateSettings(e.detail)}"
+        @locale-change="${(e: CustomEvent<LocaleCode>) =>
+          this.changeLocale(e.detail)}"
+        @export-panel-open="${this.openExportPanel}"
+        @export-panel-close="${this.closeExportPanel}"
+        @export-confirm="${this.confirmExport}"
+        @export-passphrase-change="${(e: CustomEvent<string>) => {
+          this.exportPassphrase = e.detail;
+        }}"
+        @import-file-chosen="${(e: CustomEvent<File>) =>
+          this.applyImportFile(e.detail)}"
+        @import-confirm="${this.confirmImportPassphrase}"
+        @import-cancel="${this.cancelImport}"
+        @import-passphrase-change="${(e: CustomEvent<string>) => {
+          this.importPassphrase = e.detail;
+        }}"
+        @drive-connect="${this.connectDrive}"
+        @drive-disconnect="${this.disconnectDriveAction}"
+        @drive-push="${this.pushDrive}"
+        @drive-pull="${this.pullDrive}"
+        @drive-passphrase-change="${(e: CustomEvent<string>) => {
+          this.drivePassphrase = e.detail;
+        }}"
+      ></markal-settings-modal>
     `;
   }
 
   private renderInfoModal() {
     return html`
-      <markal-modal
+      <markal-info-modal
         ?open="${this.infoOpen}"
-        label="${msg("Acerca de Markal")}"
+        .appVersion="${APP_VERSION}"
+        .repoUrl="${REPO_URL}"
+        .changelogUrl="${CHANGELOG_URL}"
         @markal-close="${this.closeInfo}"
-      >
-        <div class="info-brand">
-          <img
-            class="info-brand-logo"
-            src="/favicon.svg"
-            alt="Markal"
-            width="72"
-            height="72"
-          />
-          <span class="info-brand-name">Markal</span>
-        </div>
-        <p class="info-description">
-          ${msg(
-            "Markal es una herramienta para crear calendarios marcables. Sólo tienes que definir un rango de fechas, definir el color de la leyenda y ¡comenzar a marcar tu calendario!",
-          )}
-        </p>
-        <h1 class="info-privacy-title">Hola</h1>
-        <section class="info-privacy">
-          <h3 class="info-privacy-title">
-            <i class="ph ph-key"></i>
-            ${msg("Privacidad y seguridad")}
-          </h3>
-          <ul class="info-privacy-list">
-            <li>
-              ${msg(
-                "Tus calendarios viven solo en tu navegador. Markal no guarda ningún dato en el servidor.",
-              )}
-            </li>
-            <li>
-              ${msg(
-                "Los calendarios compartidos están cifrados extremo a extremo (AES-GCM-256). La clave viaja en el enlace, que nunca llega a un servidor.",
-              )}
-            </li>
-            <li>
-              ${msg(
-                "El respaldo en Google Drive (opcional) viaja cifrado con tu contraseña. Markal no puede leer el contenido.",
-              )}
-            </li>
-          </ul>
-          <a class="info-privacy-link" href="/privacy">
-            ${msg("Leer política completa →")}
-          </a>
-        </section>
-        <div class="info-meta">
-          <div class="info-meta-row">
-            <span class="info-meta-label">${msg("Versión")}</span>
-            <span class="info-meta-value">${APP_VERSION}</span>
-          </div>
-          <div class="info-meta-row">
-            <span class="info-meta-label">${msg("Repositorio")}</span>
-            <a
-              class="info-link"
-              href="${REPO_URL}"
-              target="_blank"
-              rel="noopener noreferrer"
-            >GitHub</a>
-          </div>
-          <div class="info-meta-row">
-            <span class="info-meta-label">${msg("Changelog")}</span>
-            <a
-              class="info-link"
-              href="${CHANGELOG_URL}"
-              target="_blank"
-              rel="noopener noreferrer"
-            >Releases</a>
-          </div>
-        </div>
-        <div slot="footer" class="info-modal-footer">
-          <p style="text-align:center">
-            ${msg(
-              html`Creado por
-                <a href="https://adriandomc.com" target="_blank"
-                  >Adrián Domínguez Casasola</a
-                >`,
-            )}
-          </p>
-        </div>
-      </markal-modal>
+      ></markal-info-modal>
     `;
   }
+
 
   private renderLegendDock(legends: LegendItem[]) {
     return html`
@@ -1398,109 +981,47 @@ export class MarkalApp extends LitElement {
   }
 
   private renderCalendariosModal() {
+    const documents = this.collection?.documents ?? [];
+    const sharedIds = new Set(
+      documents.filter((doc) => Boolean(getShareInfo(doc.id))).map((d) => d.id),
+    );
     return html`
-      <markal-modal
+      <markal-calendarios-modal
         ?open="${this.calendariosOpen}"
-        label="${msg("Calendarios")}"
-        size="lg"
+        .documents="${documents}"
+        .selectedId="${this.collection?.selectedId ?? ""}"
+        .sharedIds="${sharedIds}"
         @markal-close="${this.closeCalendarios}"
-      >
-        <div class="calendarios-modal-header">
-          <markal-icon-button
-            icon="plus"
-            label="${msg("Nuevo calendario")}"
-            @click="${this.createCalendar}"
-          ></markal-icon-button>
-        </div>
-        <div class="calendar-list" @markal-reorder="${this.reorderCalendars}">
-          ${this.collection?.documents.map((calendar) =>
-            this.renderCalendarItem(calendar)
-          )}
-        </div>
-      </markal-modal>
+        @calendar-create="${this.createCalendar}"
+        @calendar-select="${(e: CustomEvent<string>) =>
+          this.selectCalendarById(e.detail)}"
+        @calendar-rename="${(e: CustomEvent<CalendarRenamePayload>) =>
+          this.renameCalendarById(e.detail.id, e.detail.title)}"
+        @calendar-duplicate="${(e: CustomEvent<string>) =>
+          this.duplicateCalendarFromEvent(e.detail)}"
+        @calendar-delete="${(e: CustomEvent<string>) =>
+          this.deleteCalendarFromEvent(e.detail)}"
+        @calendar-share="${(e: CustomEvent<string>) =>
+          this.openShareForCalendar(e.detail)}"
+        @calendar-reorder="${this.reorderCalendars}"
+      ></markal-calendarios-modal>
     `;
   }
 
   private renderPeersModal() {
     const peers = this.peersOpen ? getConnectedPeers() : [];
-    const grouped = new Map<string, PeerInfo[]>();
-    for (const peer of peers) {
-      const list = grouped.get(peer.calendarId) ?? [];
-      list.push(peer);
-      grouped.set(peer.calendarId, list);
+    const calendarTitles: Record<string, string> = {};
+    for (const doc of this.collection?.documents ?? []) {
+      calendarTitles[doc.id] = doc.title;
     }
-    const calendarTitle = (id: string): string => {
-      const doc = this.collection?.documents.find((d) => d.id === id);
-      return doc?.title ?? msg("Calendario");
-    };
-
     return html`
-      <markal-modal
+      <markal-peers-modal
         ?open="${this.peersOpen}"
-        label="${msg("Conexiones")}"
+        .userName="${this.userName}"
+        .peers="${peers}"
+        .calendarTitles="${calendarTitles}"
         @markal-close="${this.closePeers}"
-      >
-        <div class="peers-self">
-          <span class="peers-self-label">${msg("Tu nombre")}</span>
-          <span class="peers-self-name">${this.userName}</span>
-          <span class="peers-self-hint">
-            ${msg("Cambia tu nombre en Configuración.")}
-          </span>
-        </div>
-        ${peers.length === 0
-          ? html`
-            <p class="peers-empty">
-              ${msg("Nadie está conectado a tus calendarios.")}
-            </p>
-          `
-          : html`
-            <div class="peers-list">
-              ${Array.from(grouped.entries()).map(
-                ([calendarId, list]) => html`
-                  <section class="peers-group">
-                    <h4 class="peers-group-title">
-                      ${calendarTitle(calendarId)}
-                    </h4>
-                    <ul class="peers-group-list">
-                      ${list.map(
-                        (peer) => html`
-                          <li class="peers-row">
-                            <i class="ph ph-users"></i>
-                            <span class="peers-row-name">
-                              ${peer.name || msg("Invitado")}
-                            </span>
-                          </li>
-                        `,
-                      )}
-                    </ul>
-                  </section>
-                `,
-              )}
-            </div>
-          `}
-      </markal-modal>
-    `;
-  }
-
-  private renderCalendarItem(calendar: CalendarDocument) {
-    const collection = this.collection;
-    if (!collection) return nothing;
-    const selected = calendar.id === collection.selectedId;
-    const shared = Boolean(getShareInfo(calendar.id));
-    return html`
-      <markal-calendar-item
-        data-calendar-id="${calendar.id}"
-        .name="${calendar.title}"
-        ?selected="${selected}"
-        ?shared="${shared}"
-        .canDelete="${collection.documents.length > 1}"
-        @markal-select="${() => this.selectCalendarById(calendar.id)}"
-        @markal-rename="${(event: CustomEvent<string>) =>
-          this.renameCalendarById(calendar.id, event.detail)}"
-        @markal-duplicate="${() => this.duplicateCalendarFromEvent(calendar.id)}"
-        @markal-delete="${() => this.deleteCalendarFromEvent(calendar.id)}"
-        @markal-share="${() => this.openShareForCalendar(calendar.id)}"
-      ></markal-calendar-item>
+      ></markal-peers-modal>
     `;
   }
 

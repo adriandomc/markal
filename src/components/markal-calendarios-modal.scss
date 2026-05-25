@@ -1,0 +1,16 @@
+:host {
+  display: contents;
+}
+
+.calendarios-modal-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.875rem;
+}
+
+.calendar-list {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  min-height: 0;
+}
