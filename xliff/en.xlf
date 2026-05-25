@@ -439,6 +439,26 @@
   <source>Mover calendario</source>
   <target>Reorder calendar</target>
 </trans-unit>
+<trans-unit id="s000e8463c4d2d999">
+  <source>Acerca de</source>
+  <target>About</target>
+</trans-unit>
+<trans-unit id="s9c123a987e5dfa34">
+  <source>Privacidad</source>
+  <target>Privacy</target>
+</trans-unit>
+<trans-unit id="sdfebd8dbd40b51e5">
+  <source>Detalles</source>
+  <target>Details</target>
+</trans-unit>
+<trans-unit id="sc3ac225273c8316b">
+  <source>General</source>
+  <target>General</target>
+</trans-unit>
+<trans-unit id="s2b2acc1b67c5093b">
+  <source>Respaldo</source>
+  <target>Backup</target>
+</trans-unit>
 </body>
 </file>
 </xliff>
