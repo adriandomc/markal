@@ -463,6 +463,18 @@
   <source>Volver a Calendarios</source>
   <target>Back to Calendars</target>
 </trans-unit>
+<trans-unit id="sdf0b691990c07441">
+  <source>Día</source>
+  <target>Day</target>
+</trans-unit>
+<trans-unit id="s1e266e19b532649c">
+  <source>Mes</source>
+  <target>Month</target>
+</trans-unit>
+<trans-unit id="sf842be199ed0f8f8">
+  <source>Año</source>
+  <target>Year</target>
+</trans-unit>
 </body>
 </file>
 </xliff>
