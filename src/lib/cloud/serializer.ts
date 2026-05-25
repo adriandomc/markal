@@ -14,6 +14,12 @@ import {
   getIndexDoc,
   notifyCollectionChanged,
 } from "../storage.ts";
+import {
+  getPreferences,
+  setPreferences,
+  type UserPreferences,
+} from "../preferences.ts";
+import { setLocalUserName } from "../sync/webrtc.ts";
 
 export interface CollectionBackup {
   format: "markal-backup";
@@ -21,6 +27,8 @@ export interface CollectionBackup {
   exportedAt: string;
   indexUpdate: string;
   calendars: Record<string, string>;
+  /** Per-device preferences (display name, etc.). Optional for backward compat. */
+  preferences?: UserPreferences;
 }
 
 function toBase64(bytes: Uint8Array): string {
@@ -56,6 +64,7 @@ export function exportCollectionBackup(): CollectionBackup {
     exportedAt: new Date().toISOString(),
     indexUpdate: toBase64(Y.encodeStateAsUpdate(indexDoc)),
     calendars,
+    preferences: getPreferences(),
   };
 }
 
@@ -78,6 +87,11 @@ export async function applyCollectionBackup(
   for (const [id, base64Update] of Object.entries(backup.calendars)) {
     const doc = await ensureCalendarDoc(id);
     Y.applyUpdate(doc, fromBase64(base64Update));
+  }
+
+  if (backup.preferences && typeof backup.preferences.userName === "string") {
+    setPreferences({ userName: backup.preferences.userName });
+    setLocalUserName(backup.preferences.userName);
   }
 
   notifyCollectionChanged();

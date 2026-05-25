@@ -4,16 +4,24 @@
   display: inline-block;
 }
 
+// Parents can tint the icon by setting `--icon-color` on the host element.
+// Each size variant needs the color override because the size selectors are
+// more specific than a bare `:host button`, and the `icon-button` mixin
+// re-applies `color: var(--ink)` via `bordered-control` each time.
+
 button {
   @include icon-button(2.375rem, 4px, var(--border));
+  color: var(--icon-color, var(--ink));
 }
 
 :host([size="sm"]) button {
   @include icon-button(2rem, 4px, var(--border));
+  color: var(--icon-color, var(--ink));
 }
 
 :host([size="lg"]) button {
   @include icon-button(var(--toggle-size, 2.5rem), 5px, var(--border-strong));
+  color: var(--icon-color, var(--ink));
 }
 
 :host([variant="strong"]) button {

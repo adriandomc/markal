@@ -2,7 +2,7 @@
 
 :host {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(3, 2rem);
+  grid-template-columns: 1.125rem minmax(0, 1fr) repeat(3, 2rem);
   gap: 0.375rem;
   align-items: center;
   border: 1px solid var(--border);
@@ -10,6 +10,7 @@
   background: var(--surface);
   padding: 0.4375rem;
   cursor: pointer;
+  will-change: transform;
   transition:
     border-color 150ms ease,
     transform 150ms ease,
@@ -27,9 +28,53 @@
   background: var(--surface-muted);
 }
 
+:host([dragging]) {
+  transition: none;
+  z-index: 2;
+  box-shadow: 0 8px 22px rgb(20 24 28 / 16%);
+  opacity: 0.96;
+  cursor: grabbing;
+}
+
+:host([dragging]:hover) {
+  transform: none;
+}
+
 :host([shared]) markal-icon-button[icon="share-network"] {
   --share-active: 1;
   filter: drop-shadow(0 0 4px rgba(45, 108, 223, 0.5));
+}
+
+.drag-handle {
+  @include control-reset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--muted);
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 3px;
+
+  &:hover {
+    color: var(--ink);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  .ph {
+    font-size: 1.125rem;
+    line-height: 1;
+  }
 }
 
 .name {

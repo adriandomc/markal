@@ -61,7 +61,21 @@ import {
   parseShareFragment,
   type ShareLink,
 } from "./lib/sync/share.ts";
-import { connectShared, disconnectShared } from "./lib/sync/webrtc.ts";
+import {
+  connectShared,
+  disconnectShared,
+  getConnectedPeerCount,
+  getConnectedPeers,
+  type PeerInfo,
+  setLocalUserName,
+  subscribeToAwarenessChanges,
+  subscribeToPeerChanges,
+} from "./lib/sync/webrtc.ts";
+import {
+  getPreferences,
+  setPreferences,
+  subscribeToPreferences,
+} from "./lib/preferences.ts";
 import type { EncryptedEnvelope } from "./lib/cloud/crypto.ts";
 import {
   applyPlainBackup,
@@ -113,6 +127,9 @@ export class MarkalApp extends LitElement {
     driveConfigured: { state: true },
     drivePassphrase: { state: true },
     driveLastSync: { state: true },
+    connectedPeers: { state: true },
+    peersOpen: { state: true },
+    userName: { state: true },
   };
 
   collection: CalendarCollection | null = null;
@@ -139,11 +156,18 @@ export class MarkalApp extends LitElement {
   driveConfigured = false;
   drivePassphrase = "";
   driveLastSync: string | null = null;
+  connectedPeers = 0;
+  peersOpen = false;
+  userName = "";
 
   private mobileQuery: MediaQueryList | null = null;
   private mobileListener: ((event: MediaQueryListEvent) => void) | null = null;
   private restoreFocusElement: HTMLElement | null = null;
   private unsubscribeCollection: (() => void) | null = null;
+  private unsubscribePeers: (() => void) | null = null;
+  private unsubscribeAwareness: (() => void) | null = null;
+  private unsubscribePreferences: (() => void) | null = null;
+  private userNameDebounce: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     super();
@@ -170,6 +194,19 @@ export class MarkalApp extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     globalThis.addEventListener("keydown", this.handleGlobalKeydown);
+
+    this.userName = getPreferences().userName;
+    this.connectedPeers = getConnectedPeerCount();
+    this.unsubscribePeers = subscribeToPeerChanges((count) => {
+      this.connectedPeers = count;
+    });
+    this.unsubscribeAwareness = subscribeToAwarenessChanges(() => {
+      if (this.peersOpen) this.requestUpdate();
+    });
+    this.unsubscribePreferences = subscribeToPreferences((prefs) => {
+      this.userName = prefs.userName;
+    });
+
     void this.initStorage();
     if (typeof globalThis.matchMedia !== "function") {
       return;
@@ -320,6 +357,22 @@ export class MarkalApp extends LitElement {
       this.unsubscribeCollection();
       this.unsubscribeCollection = null;
     }
+    if (this.unsubscribePeers) {
+      this.unsubscribePeers();
+      this.unsubscribePeers = null;
+    }
+    if (this.unsubscribeAwareness) {
+      this.unsubscribeAwareness();
+      this.unsubscribeAwareness = null;
+    }
+    if (this.unsubscribePreferences) {
+      this.unsubscribePreferences();
+      this.unsubscribePreferences = null;
+    }
+    if (this.userNameDebounce) {
+      clearTimeout(this.userNameDebounce);
+      this.userNameDebounce = null;
+    }
   }
 
   private openCalendarios = (): void => {
@@ -367,6 +420,26 @@ export class MarkalApp extends LitElement {
 
   private closeExport = (): void => {
     this.exportOpen = false;
+  };
+
+  private openPeers = (): void => {
+    this.peersOpen = true;
+  };
+
+  private closePeers = (): void => {
+    this.peersOpen = false;
+  };
+
+  private handleUserNameInput = (event: InputEvent): void => {
+    const value = (event.target as HTMLInputElement).value;
+    this.userName = value;
+    if (this.userNameDebounce) clearTimeout(this.userNameDebounce);
+    this.userNameDebounce = setTimeout(() => {
+      const trimmed = value.trim();
+      if (trimmed.length === 0) return;
+      setPreferences({ userName: trimmed });
+      setLocalUserName(trimmed);
+    }, 300);
   };
 
   private openShareForCalendar = (calendarId: string): void => {
@@ -678,6 +751,16 @@ export class MarkalApp extends LitElement {
           @click="${this.openCalendarios}"
         ></markal-icon-button>
         <markal-icon-button
+          icon="users"
+          label="${this.connectedPeers > 0
+            ? msg(str`Conexiones (${this.connectedPeers})`)
+            : msg("Conexiones")}"
+          size="lg"
+          variant="strong"
+          class="${this.connectedPeers > 0 ? "peers-active" : ""}"
+          @click="${this.openPeers}"
+        ></markal-icon-button>
+        <markal-icon-button
           icon="export"
           label="${msg("Exportar")}"
           size="lg"
@@ -722,6 +805,7 @@ export class MarkalApp extends LitElement {
                 @legend-change="${this.changeLegend}"
                 @legend-add="${this.addLegend}"
                 @legend-remove="${this.removeLegend}"
+                @legend-reorder="${this.reorderLegends}"
               ></markal-legend-panel>
             `}
           </section>
@@ -731,7 +815,7 @@ export class MarkalApp extends LitElement {
         ? this.renderLegendDock(document.legends)
         : nothing} ${this.renderInfoModal()} ${this.renderSettingsModal()}
       ${this.renderExportModal()} ${this.renderShareModal()}
-      ${this.renderCalendariosModal()}
+      ${this.renderCalendariosModal()} ${this.renderPeersModal()}
     `;
   }
 
@@ -843,6 +927,20 @@ export class MarkalApp extends LitElement {
         size="lg"
         @markal-close="${this.closeSettings}"
       >
+        <markal-settings-row
+          rowTitle="${msg("Tu nombre")}"
+          helpText="${msg(
+            "Aparece para las personas con quienes compartes calendarios.",
+          )}"
+        >
+          <input
+            class="user-name-input"
+            type="text"
+            aria-label="${msg("Tu nombre")}"
+            .value="${this.userName}"
+            @input="${this.handleUserNameInput}"
+          />
+        </markal-settings-row>
         <markal-settings-row
           rowTitle="${msg("Mostrar marcas de otros meses")}"
           helpText="${msg(
@@ -1157,6 +1255,7 @@ export class MarkalApp extends LitElement {
             "Markal es una herramienta para crear calendarios marcables. Sólo tienes que definir un rango de fechas, definir el color de la leyenda y ¡comenzar a marcar tu calendario!",
           )}
         </p>
+        <h1 class="info-privacy-title">Hola</h1>
         <section class="info-privacy">
           <h3 class="info-privacy-title">
             <i class="ph ph-key"></i>
@@ -1165,12 +1264,12 @@ export class MarkalApp extends LitElement {
           <ul class="info-privacy-list">
             <li>
               ${msg(
-                "Tus calendarios viven solo en tu navegador. Markal no tiene servidores que los almacenen.",
+                "Tus calendarios viven solo en tu navegador. Markal no guarda ningún dato en el servidor.",
               )}
             </li>
             <li>
               ${msg(
-                "Compartir un calendario cifra los datos extremo a extremo (AES-GCM-256). La clave viaja en el fragmento (#) del enlace, que nunca llega a un servidor.",
+                "Los calendarios compartidos están cifrados extremo a extremo (AES-GCM-256). La clave viaja en el enlace, que nunca llega a un servidor.",
               )}
             </li>
             <li>
@@ -1290,6 +1389,7 @@ export class MarkalApp extends LitElement {
               @legend-change="${this.changeLegend}"
               @legend-add="${this.addLegend}"
               @legend-remove="${this.removeLegend}"
+              @legend-reorder="${this.reorderLegends}"
             ></markal-legend-panel>
           </div>
         </div>
@@ -1312,11 +1412,72 @@ export class MarkalApp extends LitElement {
             @click="${this.createCalendar}"
           ></markal-icon-button>
         </div>
-        <div class="calendar-list">
+        <div class="calendar-list" @markal-reorder="${this.reorderCalendars}">
           ${this.collection?.documents.map((calendar) =>
             this.renderCalendarItem(calendar)
           )}
         </div>
+      </markal-modal>
+    `;
+  }
+
+  private renderPeersModal() {
+    const peers = this.peersOpen ? getConnectedPeers() : [];
+    const grouped = new Map<string, PeerInfo[]>();
+    for (const peer of peers) {
+      const list = grouped.get(peer.calendarId) ?? [];
+      list.push(peer);
+      grouped.set(peer.calendarId, list);
+    }
+    const calendarTitle = (id: string): string => {
+      const doc = this.collection?.documents.find((d) => d.id === id);
+      return doc?.title ?? msg("Calendario");
+    };
+
+    return html`
+      <markal-modal
+        ?open="${this.peersOpen}"
+        label="${msg("Conexiones")}"
+        @markal-close="${this.closePeers}"
+      >
+        <div class="peers-self">
+          <span class="peers-self-label">${msg("Tu nombre")}</span>
+          <span class="peers-self-name">${this.userName}</span>
+          <span class="peers-self-hint">
+            ${msg("Cambia tu nombre en Configuración.")}
+          </span>
+        </div>
+        ${peers.length === 0
+          ? html`
+            <p class="peers-empty">
+              ${msg("Nadie está conectado a tus calendarios.")}
+            </p>
+          `
+          : html`
+            <div class="peers-list">
+              ${Array.from(grouped.entries()).map(
+                ([calendarId, list]) => html`
+                  <section class="peers-group">
+                    <h4 class="peers-group-title">
+                      ${calendarTitle(calendarId)}
+                    </h4>
+                    <ul class="peers-group-list">
+                      ${list.map(
+                        (peer) => html`
+                          <li class="peers-row">
+                            <i class="ph ph-users"></i>
+                            <span class="peers-row-name">
+                              ${peer.name || msg("Invitado")}
+                            </span>
+                          </li>
+                        `,
+                      )}
+                    </ul>
+                  </section>
+                `,
+              )}
+            </div>
+          `}
       </markal-modal>
     `;
   }
@@ -1328,6 +1489,7 @@ export class MarkalApp extends LitElement {
     const shared = Boolean(getShareInfo(calendar.id));
     return html`
       <markal-calendar-item
+        data-calendar-id="${calendar.id}"
         .name="${calendar.title}"
         ?selected="${selected}"
         ?shared="${shared}"
@@ -1341,6 +1503,19 @@ export class MarkalApp extends LitElement {
       ></markal-calendar-item>
     `;
   }
+
+  private reorderCalendars = (event: CustomEvent<string[]>): void => {
+    const collection = this.collection;
+    if (!collection) return;
+    const byId = new Map(collection.documents.map((d) => [d.id, d]));
+    const reordered: CalendarDocument[] = [];
+    for (const id of event.detail) {
+      const doc = byId.get(id);
+      if (doc) reordered.push(doc);
+    }
+    if (reordered.length !== collection.documents.length) return;
+    this.persist({ ...collection, documents: reordered });
+  };
 
   private get selectedDocument(): CalendarDocument {
     if (!this.collection) {
@@ -1512,6 +1687,28 @@ export class MarkalApp extends LitElement {
       ...document,
       legends: [...document.legends, legend],
     }));
+  };
+
+  private reorderLegends = (event: CustomEvent<string[]>): void => {
+    const orderedIds = event.detail;
+    this.updateSelectedDocument((document) => {
+      const byId = new Map(document.legends.map((legend) => [legend.id, legend]));
+      const reordered: LegendItem[] = [];
+      for (const id of orderedIds) {
+        const legend = byId.get(id);
+        if (legend) {
+          reordered.push(legend);
+          byId.delete(id);
+        }
+      }
+      for (const legend of byId.values()) {
+        reordered.push(legend);
+      }
+      if (reordered.length !== document.legends.length) {
+        return document;
+      }
+      return { ...document, legends: reordered };
+    });
   };
 
   private removeLegend = (event: CustomEvent<string>): void => {

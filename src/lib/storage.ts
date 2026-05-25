@@ -657,29 +657,41 @@ function writeLegends(
   arr: Y.Array<Y.Map<unknown>>,
   legends: LegendItem[],
 ): void {
+  const currentIds: string[] = [];
   const currentById = new Map<string, Y.Map<unknown>>();
   arr.forEach((legendMap) => {
-    currentById.set(legendMap.get("id") as string, legendMap);
+    const id = legendMap.get("id") as string;
+    currentIds.push(id);
+    currentById.set(id, legendMap);
   });
-  const targetIds = new Set(legends.map((l) => l.id));
+  const targetIds = legends.map((l) => l.id);
+  const targetIdSet = new Set(targetIds);
 
-  for (let i = arr.length - 1; i >= 0; i--) {
-    const id = arr.get(i).get("id") as string;
-    if (!targetIds.has(id)) {
-      arr.delete(i, 1);
+  const sameMembership = currentIds.length === targetIds.length &&
+    currentIds.every((id) => targetIdSet.has(id));
+  const sameOrder = sameMembership &&
+    currentIds.every((id, i) => id === targetIds[i]);
+
+  if (sameOrder) {
+    // Same set + same order: patch fields in place to preserve CRDT history
+    // for concurrent label/color edits from peers.
+    for (const legend of legends) {
+      const existing = currentById.get(legend.id);
+      if (existing) writeLegendInto(existing, legend);
     }
+    return;
   }
 
-  for (const legend of legends) {
-    const existing = currentById.get(legend.id);
-    if (existing) {
-      writeLegendInto(existing, legend);
-    } else {
-      const newMap = new Y.Map<unknown>();
-      writeLegendInto(newMap, legend);
-      arr.push([newMap]);
-    }
-  }
+  // Order changed (or membership): rebuild the array so reorderings reach
+  // peers. Y.Array doesn't support moving entries, so we tombstone the old
+  // entries and insert fresh Y.Maps in the target order.
+  if (arr.length > 0) arr.delete(0, arr.length);
+  const fresh: Y.Map<unknown>[] = legends.map((legend) => {
+    const map = new Y.Map<unknown>();
+    writeLegendInto(map, legend);
+    return map;
+  });
+  if (fresh.length > 0) arr.push(fresh);
 }
 
 function writeMarks(

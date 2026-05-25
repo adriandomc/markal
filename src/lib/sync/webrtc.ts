@@ -1,5 +1,6 @@
 import { WebrtcProvider } from "y-webrtc";
 import type * as Y from "yjs";
+import { getPreferences } from "../preferences.ts";
 
 /**
  * Manages y-webrtc providers per shared calendar.
@@ -33,9 +34,13 @@ function defaultSignalingUrl(): string {
 interface ActiveProvider {
   provider: WebrtcProvider;
   roomId: string;
+  onPeers: () => void;
+  onAwareness: () => void;
 }
 
 const providers = new Map<string, ActiveProvider>();
+const peerListeners = new Set<(count: number) => void>();
+const awarenessListeners = new Set<() => void>();
 
 export interface ConnectOptions {
   /** Stable calendar id (the key in our local store). */
@@ -66,13 +71,40 @@ export function connectShared(options: ConnectOptions): WebrtcProvider {
     password: options.encryptionKey,
     maxConns: 20,
   });
-  providers.set(options.calendarId, { provider, roomId: options.roomId });
+
+  provider.awareness.setLocalStateField("user", {
+    name: getPreferences().userName,
+  });
+
+  const onPeers = () => notifyPeerListeners();
+  const onAwareness = () => notifyAwarenessListeners();
+  provider.on("peers", onPeers);
+  provider.awareness.on("change", onAwareness);
+
+  providers.set(options.calendarId, {
+    provider,
+    roomId: options.roomId,
+    onPeers,
+    onAwareness,
+  });
+  notifyPeerListeners();
+  notifyAwarenessListeners();
   return provider;
 }
 
 export function disconnectShared(calendarId: string): void {
   const entry = providers.get(calendarId);
   if (!entry) return;
+  try {
+    entry.provider.off("peers", entry.onPeers);
+  } catch {
+    // ignore
+  }
+  try {
+    entry.provider.awareness.off("change", entry.onAwareness);
+  } catch {
+    // ignore
+  }
   try {
     entry.provider.disconnect();
   } catch {
@@ -84,6 +116,8 @@ export function disconnectShared(calendarId: string): void {
     // ignore
   }
   providers.delete(calendarId);
+  notifyPeerListeners();
+  notifyAwarenessListeners();
 }
 
 export function getActiveProvider(calendarId: string): WebrtcProvider | undefined {
@@ -99,4 +133,70 @@ export function disconnectAll(): void {
   for (const calendarId of Array.from(providers.keys())) {
     disconnectShared(calendarId);
   }
+}
+
+/** Total remote peers connected across all shared calendars. */
+export function getConnectedPeerCount(): number {
+  let total = 0;
+  for (const entry of providers.values()) {
+    total += Math.max(0, entry.provider.awareness.getStates().size - 1);
+  }
+  return total;
+}
+
+export function subscribeToPeerChanges(
+  listener: (count: number) => void,
+): () => void {
+  peerListeners.add(listener);
+  return () => {
+    peerListeners.delete(listener);
+  };
+}
+
+export interface PeerInfo {
+  calendarId: string;
+  clientId: number;
+  name: string;
+}
+
+/** Snapshot of every remote peer across every shared calendar. */
+export function getConnectedPeers(): PeerInfo[] {
+  const peers: PeerInfo[] = [];
+  for (const [calendarId, entry] of providers.entries()) {
+    const localId = entry.provider.awareness.clientID;
+    entry.provider.awareness.getStates().forEach((state, clientId) => {
+      if (clientId === localId) return;
+      const user = (state as { user?: { name?: string } }).user;
+      const name = typeof user?.name === "string" && user.name.length > 0
+        ? user.name
+        : "";
+      peers.push({ calendarId, clientId, name });
+    });
+  }
+  return peers;
+}
+
+export function subscribeToAwarenessChanges(
+  listener: () => void,
+): () => void {
+  awarenessListeners.add(listener);
+  return () => {
+    awarenessListeners.delete(listener);
+  };
+}
+
+/** Push the user name to all active providers (e.g. after a rename). */
+export function setLocalUserName(name: string): void {
+  for (const entry of providers.values()) {
+    entry.provider.awareness.setLocalStateField("user", { name });
+  }
+}
+
+function notifyPeerListeners(): void {
+  const count = getConnectedPeerCount();
+  for (const listener of peerListeners) listener(count);
+}
+
+function notifyAwarenessListeners(): void {
+  for (const listener of awarenessListeners) listener();
 }

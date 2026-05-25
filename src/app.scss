@@ -32,6 +32,11 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+
+  markal-icon-button.peers-active {
+    --icon-color: #1f8a3f;
+    color: #1f8a3f;
+  }
 }
 
 .calendarios-modal-header {
@@ -45,6 +50,97 @@
   align-content: start;
   gap: 0.5rem;
   min-height: 0;
+}
+
+.user-name-input {
+  @include text-input(4px);
+  padding: 0.5rem 0.625rem;
+  font-weight: 720;
+  min-width: 0;
+  max-width: 16rem;
+}
+
+.peers-self {
+  display: grid;
+  gap: 0.1875rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-muted);
+  margin-bottom: 0.875rem;
+
+  .peers-self-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .peers-self-name {
+    font-size: 1.05rem;
+    font-weight: 720;
+    color: var(--ink);
+  }
+
+  .peers-self-hint {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+}
+
+.peers-empty {
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.peers-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.peers-group {
+  display: grid;
+  gap: 0.4375rem;
+}
+
+.peers-group-title {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 720;
+}
+
+.peers-group-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.peers-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+
+  .ph {
+    color: var(--muted);
+    font-size: 1rem;
+  }
+
+  .peers-row-name {
+    font-weight: 720;
+    color: var(--ink);
+  }
 }
 
 .action-button {
