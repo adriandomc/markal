@@ -34,6 +34,10 @@ export const iconStyles = css`
     content: "\\e1cc";
   }
 
+  .ph.ph-dots-six-vertical::before {
+    content: "\\eae2";
+  }
+
   .ph.ph-export::before {
     content: "\\eaf0";
   }
@@ -76,6 +80,10 @@ export const iconStyles = css`
 
   .ph.ph-trash::before {
     content: "\\e4a6";
+  }
+
+  .ph.ph-users::before {
+    content: "\\e4d6";
   }
 
   .ph.ph-x::before {
