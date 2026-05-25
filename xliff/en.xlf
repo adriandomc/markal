@@ -383,14 +383,6 @@
   <source>Privacidad y seguridad</source>
   <target>Privacy and security</target>
 </trans-unit>
-<trans-unit id="sf686305e0cc8fdab">
-  <source>Tus calendarios viven solo en tu navegador. Markal no tiene servidores que los almacenen.</source>
-  <target>Your calendars live only in your browser. Markal has no servers that store them.</target>
-</trans-unit>
-<trans-unit id="s20ee091c43dfc3a8">
-  <source>Compartir un calendario cifra los datos extremo a extremo (AES-GCM-256). La clave viaja en el fragmento (#) del enlace, que nunca llega a un servidor.</source>
-  <target>Sharing a calendar encrypts the data end-to-end (AES-GCM-256). The key travels in the link's fragment (#), which never reaches any server.</target>
-</trans-unit>
 <trans-unit id="s875b891c03e3f9eb">
   <source>El respaldo en Google Drive (opcional) viaja cifrado con tu contraseña. Markal no puede leer el contenido.</source>
   <target>The optional Google Drive backup is encrypted with your passphrase. Markal cannot read the content.</target>
@@ -398,6 +390,54 @@
 <trans-unit id="s354a93e9b3e57467">
   <source>Leer política completa →</source>
   <target>Read full policy →</target>
+</trans-unit>
+<trans-unit id="s1478834003c3b8df">
+  <source>Tus calendarios viven solo en tu navegador. Markal no guarda ningún dato en el servidor.</source>
+  <target>Your calendars live only in your browser. Markal does not save any data on the server.</target>
+</trans-unit>
+<trans-unit id="sb6f2750e54be0a90">
+  <source>Los calendarios compartidos están cifrados extremo a extremo (AES-GCM-256). La clave viaja en el enlace, que nunca llega a un servidor.</source>
+  <target>The shared calendars are encrypted end-to-end (AES-GCM-256). The key travels in the link, which never reaches any server</target>
+</trans-unit>
+<trans-unit id="s58b13f1c7a898bb4">
+  <source>Mover leyenda</source>
+  <target>Reorder legend</target>
+</trans-unit>
+<trans-unit id="s0690170e6e2f6655">
+  <source>Conexiones (<x id="0" equiv-text="${this.connectedPeers}"/>)</source>
+  <target>Connections (<x id="0" equiv-text="${this.connectedPeers}"/>)</target>
+</trans-unit>
+<trans-unit id="s7c17b538eb84f25c">
+  <source>Conexiones</source>
+  <target>Connections</target>
+</trans-unit>
+<trans-unit id="s44da7182916bee33">
+  <source>Tu nombre</source>
+  <target>Your name</target>
+</trans-unit>
+<trans-unit id="sb1de47c37ec2644e">
+  <source>Aparece para las personas con quienes compartes calendarios.</source>
+  <target>Shown to the people you share calendars with.</target>
+</trans-unit>
+<trans-unit id="s7778468f83ec19b7">
+  <source>Calendario</source>
+  <target>Calendar</target>
+</trans-unit>
+<trans-unit id="sae78915ab1a85fc8">
+  <source>Cambia tu nombre en Configuración.</source>
+  <target>Change your name in Settings.</target>
+</trans-unit>
+<trans-unit id="s43a01962e6ec6a8b">
+  <source>Nadie está conectado a tus calendarios.</source>
+  <target>Nobody is connected to your calendars.</target>
+</trans-unit>
+<trans-unit id="s40576860b01d38a5">
+  <source>Invitado</source>
+  <target>Guest</target>
+</trans-unit>
+<trans-unit id="s615666ba4a0e08c4">
+  <source>Mover calendario</source>
+  <target>Reorder calendar</target>
 </trans-unit>
 </body>
 </file>
