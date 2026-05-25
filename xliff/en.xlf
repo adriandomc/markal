@@ -223,10 +223,6 @@
   <source>Cargando…</source>
   <target>Loading…</target>
 </trans-unit>
-<trans-unit id="s05a687d5aae2c66e">
-  <source>Compartir calendario</source>
-  <target>Share calendar</target>
-</trans-unit>
 <trans-unit id="se4bcf1f368963253">
   <source>Cualquiera con este enlace podrá ver y editar este calendario en tiempo real. Tus otros calendarios no se comparten.</source>
   <target>Anyone with this link can view and edit this calendar in real time. Your other calendars stay private.</target>
@@ -458,6 +454,14 @@
 <trans-unit id="s2b2acc1b67c5093b">
   <source>Respaldo</source>
   <target>Backup</target>
+</trans-unit>
+<trans-unit id="s01c70ba03a27d622">
+  <source>Compartir <x id="0" equiv-text="${sharing.title || msg(&quot;Calendario&quot;)}"/></source>
+  <target>Share <x id="0" equiv-text="${sharing.title || msg(&quot;Calendario&quot;)}"/></target>
+</trans-unit>
+<trans-unit id="sa3d224533e11b2a7">
+  <source>Volver a Calendarios</source>
+  <target>Back to Calendars</target>
 </trans-unit>
 </body>
 </file>
