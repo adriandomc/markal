@@ -89,6 +89,7 @@
 
 .sep {
   color: var(--muted);
+  font-size: 0.9rem;
   font-weight: 650;
   user-select: none;
 }
@@ -147,7 +148,7 @@
   text-align: center;
 }
 
-.day {
+.days > .day {
   @include bordered-control(3px, transparent, transparent);
   min-height: 2.125rem;
   cursor: pointer;
