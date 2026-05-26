@@ -15,10 +15,10 @@
 .date-chip {
   @include bordered-control;
   min-width: 11rem;
-  padding: 0.4375rem 0.5rem 0.4375rem 0.625rem;
+  padding: 0.25rem 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 0;
   transition:
     border-color 160ms ease,
     transform 160ms ease,
@@ -72,6 +72,7 @@
   &:focus {
     outline: none;
     background: var(--surface-muted);
+    box-shadow: 0 0 0 1px var(--border-strong);
   }
 
   &.day,
