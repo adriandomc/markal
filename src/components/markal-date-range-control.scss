@@ -70,19 +70,20 @@
   }
 
   &:focus {
-    outline: none;
+    outline: 1px solid var(--border-strong);
+    outline-offset: 0;
     background: var(--surface-muted);
-    box-shadow: 0 0 0 1px var(--border-strong);
   }
 
   &.day,
   &.month {
-    width: 1.5em;
+    width: 2ch;
+    min-width: 2ch;
   }
 
   &.year {
-    width: 2.75em;
-    min-width: 2.75em;
+    width: 4ch;
+    min-width: 4ch;
   }
 }
 
