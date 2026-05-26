@@ -137,8 +137,13 @@ export class MarkalDateRangeControl extends LitElement {
         data-invalid="${String(invalid)}"
         role="group"
         aria-label="${label}"
+        aria-expanded="${this.open && this.activeField === field
+          ? "true"
+          : "false"}"
         @focusout="${(event: FocusEvent) =>
           this.handleChipFocusOut(event, field)}"
+        @click="${(event: MouseEvent) =>
+          this.handleChipClick(event, field)}"
       >
         <span class="chip-label">${label}</span>
         <div class="chip-fields">
@@ -150,16 +155,6 @@ export class MarkalDateRangeControl extends LitElement {
               ${this.renderPartInput(field, part, buffer)}
             `
           )}
-          <markal-icon-button
-            class="chip-calendar"
-            icon="calendar-dots"
-            size="sm"
-            label="${msg("Selector de fecha")}"
-            aria-expanded="${this.open && this.activeField === field
-              ? "true"
-              : "false"}"
-            @click="${() => this.openPicker(field)}"
-          ></markal-icon-button>
         </div>
       </div>
     `;
@@ -478,6 +473,12 @@ export class MarkalDateRangeControl extends LitElement {
         </div>
       </div>
     `;
+  }
+
+  private handleChipClick(event: MouseEvent, field: ActiveField): void {
+    const target = event.target as HTMLElement;
+    if (target.tagName === "INPUT") return;
+    this.openPicker(field);
   }
 
   private openPicker(field: ActiveField): void {
