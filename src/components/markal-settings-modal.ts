@@ -38,7 +38,7 @@ export class MarkalSettingsModal extends LitElement {
 
   open = false;
   userName = "";
-  settings: CalendarSettings = { showOutMonthMarks: true, maxMarksPerDay: 4 };
+  settings: CalendarSettings = { showOutMonthMarks: true, maxMarksPerDay: 4, selectWeekends: true };
   currentLocale: LocaleCode = "es";
   driveConfigured = false;
   driveConnected = false;
