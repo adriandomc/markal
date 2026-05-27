@@ -12,6 +12,7 @@ const DEFAULT_LEGENDS: Array<Omit<LegendItem, "id">> = [
 export const DEFAULT_SETTINGS: CalendarSettings = {
   showOutMonthMarks: true,
   maxMarksPerDay: DEFAULT_MAX_MARKS_PER_DAY,
+  selectWeekends: true,
 };
 
 export function createId(prefix = "id"): string {

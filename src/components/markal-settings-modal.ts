@@ -111,6 +111,22 @@ export class MarkalSettingsModal extends LitElement {
               ></markal-switch>
             </markal-settings-row>
             <markal-settings-row
+              rowTitle="${msg("Seleccionar fines de semana", { id: "settings.selectWeekends.title" })}"
+              helpText="${msg(
+                "Permite marcar sábados y domingos en el calendario.",
+                { id: "settings.selectWeekends.help" },
+              )}"
+            >
+              <markal-switch
+                ?checked="${this.settings.selectWeekends}"
+                label="${msg("Seleccionar fines de semana", { id: "settings.selectWeekends.label" })}"
+                @change="${(event: CustomEvent<boolean>) =>
+                  this.emit("settings-change", {
+                    selectWeekends: event.detail,
+                  })}"
+              ></markal-switch>
+            </markal-settings-row>
+            <markal-settings-row
               stacked
               rowTitle="${msg("Leyendas por día")}"
               helpText="${msg(

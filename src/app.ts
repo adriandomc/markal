@@ -32,6 +32,7 @@ import {
   createId,
   duplicateCalendarDocument,
 } from "./lib/calendar-doc.ts";
+import { parseDateKey } from "./lib/dates.ts";
 import { iconStyles } from "./lib/icon-styles.ts";
 import { localStyles } from "./lib/lit-styles.ts";
 import {
@@ -1157,16 +1158,31 @@ export class MarkalApp extends LitElement {
   };
 
   private updateSettings = (patch: Partial<CalendarSettings>): void => {
-    this.updateSelectedDocument((document) => ({
-      ...document,
-      settings: {
+    this.updateSelectedDocument((document) => {
+      const nextSettings: CalendarSettings = {
         ...document.settings,
         ...patch,
         maxMarksPerDay: clampMaxMarksPerDay(
           patch.maxMarksPerDay ?? document.settings.maxMarksPerDay,
         ),
-      },
-    }));
+      };
+
+      let nextMarks = document.marks;
+      if (patch.selectWeekends === false && document.settings.selectWeekends) {
+        nextMarks = Object.fromEntries(
+          Object.entries(document.marks).filter(([date]) => {
+            const dayOfWeek = parseDateKey(date).getDay();
+            return dayOfWeek !== 0 && dayOfWeek !== 6;
+          }),
+        );
+      }
+
+      return {
+        ...document,
+        settings: nextSettings,
+        marks: nextMarks,
+      };
+    });
   };
 
   private selectLegend = (event: CustomEvent<string>): void => {
@@ -1254,8 +1270,15 @@ export class MarkalApp extends LitElement {
 
     this.updateSelectedDocument((document) => {
       const marks = { ...document.marks };
+      const allowWeekends = document.settings.selectWeekends;
 
       for (const date of dates) {
+        if (!allowWeekends) {
+          const dayOfWeek = parseDateKey(date).getDay();
+          if (dayOfWeek === 0 || dayOfWeek === 6) {
+            continue;
+          }
+        }
         marks[date] = applyLegendToDate(
           document.marks[date],
           this.selectedLegendId,

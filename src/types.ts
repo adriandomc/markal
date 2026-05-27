@@ -16,6 +16,7 @@ export interface LegendItem {
 export interface CalendarSettings {
   showOutMonthMarks: boolean;
   maxMarksPerDay: number;
+  selectWeekends: boolean;
 }
 
 export interface CalendarDocument {
