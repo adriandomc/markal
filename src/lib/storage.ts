@@ -597,6 +597,9 @@ function readSettings(map: Y.Map<unknown>): CalendarSettings {
         ? (map.get("maxMarksPerDay") as number)
         : DEFAULT_SETTINGS.maxMarksPerDay,
     ),
+    selectWeekends: typeof map.get("selectWeekends") === "boolean"
+      ? (map.get("selectWeekends") as boolean)
+      : DEFAULT_SETTINGS.selectWeekends,
   };
 }
 
@@ -725,6 +728,7 @@ function writeMarks(
 function writeSettings(map: Y.Map<unknown>, settings: CalendarSettings): void {
   setIfChanged(map, "showOutMonthMarks", settings.showOutMonthMarks);
   setIfChanged(map, "maxMarksPerDay", settings.maxMarksPerDay);
+  setIfChanged(map, "selectWeekends", settings.selectWeekends);
 }
 
 function getOrCreateMap(parent: Y.Map<unknown>, key: string): Y.Map<unknown> {
@@ -788,6 +792,9 @@ function normalizeCollection(
             ? document.settings.maxMarksPerDay
             : DEFAULT_SETTINGS.maxMarksPerDay,
         ),
+        selectWeekends: typeof document.settings?.selectWeekends === "boolean"
+          ? document.settings.selectWeekends
+          : DEFAULT_SETTINGS.selectWeekends,
       },
     })),
   };
