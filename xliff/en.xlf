@@ -26,6 +26,18 @@
   <source>Máximo de leyendas que puedes apilar en una misma fecha.</source>
   <target>Maximum number of legends you can stack on a single date.</target>
 </trans-unit>
+<trans-unit id="settings.selectWeekends.title">
+  <source>Seleccionar fines de semana</source>
+  <target>Select weekends</target>
+</trans-unit>
+<trans-unit id="settings.selectWeekends.help">
+  <source>Permite marcar sábados y domingos en el calendario.</source>
+  <target>Allows marking Saturdays and Sundays on the calendar.</target>
+</trans-unit>
+<trans-unit id="settings.selectWeekends.label">
+  <source>Seleccionar fines de semana</source>
+  <target>Select weekends</target>
+</trans-unit>
 <trans-unit id="s351a37b6b243a5d6">
   <source>Idioma</source>
   <target>Language</target>
