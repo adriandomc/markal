@@ -14,7 +14,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 COPY deno.json deno.lock package.json ./
-COPY astro.config.mjs tsconfig.json ./
+COPY astro.config.mjs tsconfig.json server.mjs ./
 COPY src ./src
 COPY public ./public
 
