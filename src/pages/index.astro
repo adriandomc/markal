@@ -11,6 +11,7 @@ import "../styles.scss";
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com wss: stun: turn:;" />
     <title>Markal</title>
     <meta
       name="description"
@@ -59,6 +60,31 @@ import "../styles.scss";
       html[data-locale="en"] [data-locale-content="es"] {
         display: none;
       }
+      .app-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.75rem 1rem 0;
+        text-align: center;
+        gap: 0.25rem;
+      }
+      .app-header-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .app-header-title {
+        font-family: 'Kefa', 'Kefa III', serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .app-header-description {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin: 0;
+        max-width: 400px;
+      }
       .site-footer {
         position: relative;
         padding: 1.25rem 1.5rem 1.75rem;
@@ -84,6 +110,18 @@ import "../styles.scss";
     </style>
   </head>
   <body>
+    <header class="app-header">
+      <div class="app-header-brand">
+        <img src="/favicon.svg" alt="Markal Logo" width="24" height="24" />
+        <span class="app-header-title">Markal</span>
+      </div>
+      <p class="app-header-description" data-locale-content="es">
+        Herramienta para crear calendarios personalizables y visuales.
+      </p>
+      <p class="app-header-description" data-locale-content="en">
+        A tool for building custom markable calendars.
+      </p>
+    </header>
     <markal-app></markal-app>
     <footer class="site-footer">
       <a href="https://markal.app/privacy" rel="privacy-policy">
