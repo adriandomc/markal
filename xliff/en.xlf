@@ -279,30 +279,6 @@
   <source>Respaldo importado</source>
   <target>Backup imported</target>
 </trans-unit>
-<trans-unit id="s210609a566fb9e9b">
-  <source>Drive desconectado</source>
-  <target>Drive disconnected</target>
-</trans-unit>
-<trans-unit id="sb7895aec44ab8c78">
-  <source>Ingresa una contraseña de cifrado</source>
-  <target>Enter an encryption passphrase</target>
-</trans-unit>
-<trans-unit id="s2937ca394494c806">
-  <source>Respaldo subido a Drive</source>
-  <target>Backup uploaded to Drive</target>
-</trans-unit>
-<trans-unit id="s1230db1b6d462879">
-  <source>Ingresa la contraseña de cifrado</source>
-  <target>Enter the encryption passphrase</target>
-</trans-unit>
-<trans-unit id="s2965d496395344fb">
-  <source>No hay respaldo en Drive todavía</source>
-  <target>No backup found in Drive yet</target>
-</trans-unit>
-<trans-unit id="sb52ea4c4221c7035">
-  <source>Respaldo descargado de Drive</source>
-  <target>Backup downloaded from Drive</target>
-</trans-unit>
 <trans-unit id="s3f5c6eae9526d1d1">
   <source>Respaldo y sincronización</source>
   <target>Backup and sync</target>
@@ -322,10 +298,6 @@
 <trans-unit id="s991fc46d3e0ed690">
   <source>Importar desde archivo</source>
   <target>Import from file</target>
-</trans-unit>
-<trans-unit id="sad7b3ee1c22c6f56">
-  <source>Google Drive</source>
-  <target>Google Drive</target>
 </trans-unit>
 <trans-unit id="sea0a44273b7862cc">
   <source>Contraseña (opcional)</source>
@@ -351,49 +323,9 @@
   <source>Restaurar</source>
   <target>Restore</target>
 </trans-unit>
-<trans-unit id="s3a99e3e624946615">
-  <source>Drive no está habilitado en esta instancia. El operador necesita registrar un OAuth client_id de Google.</source>
-  <target>Drive is not enabled on this instance. The operator needs to register a Google OAuth client_id.</target>
-</trans-unit>
-<trans-unit id="s653019d5ca8d22b6">
-  <source>Guarda un respaldo cifrado en tu propia cuenta de Drive. Markal nunca verá la contraseña ni los datos descifrados.</source>
-  <target>Save an encrypted backup to your own Drive account. Markal never sees the passphrase nor the decrypted data.</target>
-</trans-unit>
-<trans-unit id="s785cca92e8040dfd">
-  <source>Conectar Google Drive</source>
-  <target>Connect Google Drive</target>
-</trans-unit>
-<trans-unit id="s1e821e8e8b515f34">
-  <source>Si olvidas la contraseña no podemos descifrar tu respaldo. Guárdala en un lugar seguro.</source>
-  <target>If you forget the passphrase, we cannot decrypt your backup. Store it somewhere safe.</target>
-</trans-unit>
-<trans-unit id="s32e3c268864a2675">
-  <source>Última sincronización: <x id="0" equiv-text="${this.driveLastSync}"/></source>
-  <target>Last sync: <x id="0" equiv-text="${this.driveLastSync}"/></target>
-</trans-unit>
-<trans-unit id="s44f320b9608aabeb">
-  <source>Contraseña de cifrado</source>
-  <target>Encryption passphrase</target>
-</trans-unit>
-<trans-unit id="sd771ae5f8e20b195">
-  <source>Subir a Drive</source>
-  <target>Upload to Drive</target>
-</trans-unit>
-<trans-unit id="sa77790a768bc03c2">
-  <source>Descargar de Drive</source>
-  <target>Download from Drive</target>
-</trans-unit>
-<trans-unit id="s60a9838dc9b4aa5c">
-  <source>Desconectar</source>
-  <target>Disconnect</target>
-</trans-unit>
 <trans-unit id="s9bcc9c12e2ec2759">
   <source>Privacidad y seguridad</source>
   <target>Privacy and security</target>
-</trans-unit>
-<trans-unit id="s875b891c03e3f9eb">
-  <source>El respaldo en Google Drive (opcional) viaja cifrado con tu contraseña. Markal no puede leer el contenido.</source>
-  <target>The optional Google Drive backup is encrypted with your passphrase. Markal cannot read the content.</target>
 </trans-unit>
 <trans-unit id="s354a93e9b3e57467">
   <source>Leer política completa →</source>
@@ -486,6 +418,90 @@
 <trans-unit id="sf842be199ed0f8f8">
   <source>Año</source>
   <target>Year</target>
+</trans-unit>
+<trans-unit id="s580c71a14bf5bdc4">
+  <source>Política de privacidad</source>
+  <target>Privacy policy</target>
+</trans-unit>
+<trans-unit id="s85a5caa07a8cd15a">
+  <source>Última actualización: 23 de mayo de 2026</source>
+  <target>Last updated: May 23, 2026</target>
+</trans-unit>
+<trans-unit id="s1b08feaa53300ba6">
+  <source>Markal no almacena tus calendarios en servidores centrales. Tus datos viven solo en tu navegador. Esta página describe los detalles.</source>
+  <target>Markal does not store your calendars on central servers. Your data lives only in your browser. This page covers the details.</target>
+</trans-unit>
+<trans-unit id="sed99bdfcf400e3bb">
+  <source>Qué se almacena en tu dispositivo</source>
+  <target>What is stored on your device</target>
+</trans-unit>
+<trans-unit id="hd9aba62febfd4bda">
+  <source><x id="0" equiv-text="&lt;strong&gt;"/>Calendarios, leyendas y marcas:<x id="1" equiv-text="&lt;/strong&gt;"/> en el almacenamiento local (IndexedDB) de tu navegador.</source>
+  <target><x id="0" equiv-text="&lt;strong&gt;"/>Calendars, legends, and marks:<x id="1" equiv-text="&lt;/strong&gt;"/> in your browser's local storage (IndexedDB).</target>
+</trans-unit>
+<trans-unit id="h33c3bb80a9bd6f3d">
+  <source><x id="0" equiv-text="&lt;strong&gt;"/>Preferencias de la app<x id="1" equiv-text="&lt;/strong&gt;"/> (idioma, estado del sidebar): en <x id="2" equiv-text="&lt;code&gt;"/>localStorage<x id="3" equiv-text="&lt;/code&gt;"/> del navegador.</source>
+  <target><x id="0" equiv-text="&lt;strong&gt;"/>App preferences<x id="1" equiv-text="&lt;/strong&gt;"/> (language, sidebar state): in <x id="2" equiv-text="&lt;code&gt;"/>localStorage<x id="3" equiv-text="&lt;/code&gt;"/>.</target>
+</trans-unit>
+<trans-unit id="s1c3c1c1216b12718">
+  <source>Lo que no hacemos</source>
+  <target>What we don't do</target>
+</trans-unit>
+<trans-unit id="s70d4dfe7edd4f284">
+  <source>No tenemos cuentas de usuario ni base de datos central de calendarios.</source>
+  <target>No user accounts. No central database of calendars.</target>
+</trans-unit>
+<trans-unit id="s9cfe8930f237b9fe">
+  <source>No usamos cookies de seguimiento ni analytics.</source>
+  <target>No tracking cookies. No analytics.</target>
+</trans-unit>
+<trans-unit id="se2e4c110b385f068">
+  <source>No vendemos, alquilamos ni compartimos información con terceros.</source>
+  <target>We don't sell, rent, or share information with third parties.</target>
+</trans-unit>
+<trans-unit id="sbf618f46db5de52f">
+  <source>Compartir calendarios entre dispositivos</source>
+  <target>Sharing calendars between devices</target>
+</trans-unit>
+<trans-unit id="ha40bfeb4821082c7">
+  <source>Cuando compartes un calendario, los datos viajan directamente entre los navegadores de los participantes vía WebRTC, cifrados de extremo a extremo con AES-GCM-256. La clave de cifrado viaja en el fragmento (<x id="0" equiv-text="&lt;code&gt;"/>#<x id="1" equiv-text="&lt;/code&gt;"/>) del enlace de invitación, que por diseño nunca llega al servidor.</source>
+  <target>When you share a calendar, the data travels directly between the participants' browsers via WebRTC, end-to-end encrypted with AES-GCM-256. The encryption key travels in the fragment (<x id="0" equiv-text="&lt;code&gt;"/>#<x id="1" equiv-text="&lt;/code&gt;"/>) of the invitation link, which by design never reaches any server.</target>
+</trans-unit>
+<trans-unit id="s418f152d368c242a">
+  <source>Un servidor de señalización propio media el handshake inicial WebRTC. Solo ve identificadores de sala opacos y direcciones IP necesarias para conectar peers; nunca ve el contenido de tus calendarios.</source>
+  <target>A self-hosted signaling server mediates the initial WebRTC handshake. It only sees opaque room identifiers and IP addresses needed to connect peers; it never sees the content of your calendars.</target>
+</trans-unit>
+<trans-unit id="s2f7a545f89209daa">
+  <source>Tus derechos</source>
+  <target>Your rights</target>
+</trans-unit>
+<trans-unit id="h118986eceef5fb35">
+  <source><x id="0" equiv-text="&lt;strong&gt;"/>Acceso:<x id="1" equiv-text="&lt;/strong&gt;"/> todos tus datos están en tu navegador; puedes inspeccionarlos con las DevTools.</source>
+  <target><x id="0" equiv-text="&lt;strong&gt;"/>Access:<x id="1" equiv-text="&lt;/strong&gt;"/> all your data lives in your browser; you can inspect it with DevTools.</target>
+</trans-unit>
+<trans-unit id="heff4ce8edf0d8226">
+  <source><x id="0" equiv-text="&lt;strong&gt;"/>Eliminación:<x id="1" equiv-text="&lt;/strong&gt;"/> borrar el storage del sitio en tu navegador elimina toda la información local.</source>
+  <target><x id="0" equiv-text="&lt;strong&gt;"/>Deletion:<x id="1" equiv-text="&lt;/strong&gt;"/> clearing your site storage in your browser removes all local information.</target>
+</trans-unit>
+<trans-unit id="h4b25107788770d66">
+  <source><x id="0" equiv-text="&lt;strong&gt;"/>Portabilidad:<x id="1" equiv-text="&lt;/strong&gt;"/> Markal incluye export/import a archivo, con opción de cifrarlo con tu contraseña.</source>
+  <target><x id="0" equiv-text="&lt;strong&gt;"/>Portability:<x id="1" equiv-text="&lt;/strong&gt;"/> Markal includes file export/import, with the option to encrypt with your passphrase.</target>
+</trans-unit>
+<trans-unit id="s5ba07d85a5cebc00">
+  <source>Cambios a esta política</source>
+  <target>Changes to this policy</target>
+</trans-unit>
+<trans-unit id="s33da14f843ff9202">
+  <source>Si esta política cambia, lo reflejaremos en esta misma página con su fecha de actualización. Markal es software de código abierto y los cambios quedan en el historial público del repositorio.</source>
+  <target>If this policy changes, we'll reflect it on this same page with its update date. Markal is open source, and the changes remain in the public repository history.</target>
+</trans-unit>
+<trans-unit id="sc7217215ef253a44">
+  <source>Contacto</source>
+  <target>Contact</target>
+</trans-unit>
+<trans-unit id="h364a0a8b520a4d2f">
+  <source>¿Preguntas o solicitudes relacionadas con privacidad? Escribe a <x id="0" equiv-text="&lt;a href=&quot;mailto:adriandomc@gmail.com&quot;&gt;"/>adriandomc@gmail.com<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
+  <target>Privacy-related questions or requests? Write to <x id="0" equiv-text="&lt;a href=&quot;mailto:adriandomc@gmail.com&quot;&gt;"/>adriandomc@gmail.com<x id="1" equiv-text="&lt;/a&gt;"/>.</target>
 </trans-unit>
 </body>
 </file>

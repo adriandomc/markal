@@ -70,11 +70,7 @@ export class MarkalInfoModal extends LitElement {
                     "Los calendarios compartidos están cifrados extremo a extremo (AES-GCM-256). La clave viaja en el enlace, que nunca llega a un servidor.",
                   )}
                 </li>
-                <li>
-                  ${msg(
-                    "El respaldo en Google Drive (opcional) viaja cifrado con tu contraseña. Markal no puede leer el contenido.",
-                  )}
-                </li>
+
               </ul>
               <a class="info-privacy-link" href="/privacy">
                 ${msg("Leer política completa →")}

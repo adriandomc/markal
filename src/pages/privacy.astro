@@ -165,265 +165,43 @@ import "../styles.scss";
         </div>
       </header>
 
-      <article data-locale-content="es">
-        <h1>Política de privacidad</h1>
-        <p class="meta">Última actualización: 23 de mayo de 2026</p>
-
-        <p class="lead">
-          Markal no almacena tus calendarios en servidores centrales. Tus datos
-          viven solo en tu navegador y, opcionalmente, en tu propia cuenta de
-          Google Drive si decides activar el respaldo. Esta página describe los
-          detalles.
-        </p>
-
-        <h2>Qué se almacena en tu dispositivo</h2>
-        <ul>
-          <li>
-            <strong>Calendarios, leyendas y marcas:</strong> en el
-            almacenamiento local (IndexedDB) de tu navegador.
-          </li>
-          <li>
-            <strong>Preferencias de la app</strong> (idioma, estado del
-            sidebar): en <code>localStorage</code> del navegador.
-          </li>
-          <li>
-            <strong>Tokens de OAuth de Google Drive</strong> (solo si conectas
-            Drive): en IndexedDB del navegador.
-          </li>
-        </ul>
-
-        <h2>Lo que no hacemos</h2>
-        <ul>
-          <li>
-            No tenemos cuentas de usuario ni base de datos central de
-            calendarios.
-          </li>
-          <li>No usamos cookies de seguimiento ni analytics.</li>
-          <li>
-            No vendemos, alquilamos ni compartimos información con terceros.
-          </li>
-        </ul>
-
-        <h2>Compartir calendarios entre dispositivos</h2>
-        <p>
-          Cuando compartes un calendario, los datos viajan directamente entre
-          los navegadores de los participantes vía WebRTC, cifrados de extremo
-          a extremo con AES-GCM-256. La clave de cifrado viaja en el fragmento
-          (<code>#</code>) del enlace de invitación, que por diseño nunca llega
-          al servidor.
-        </p>
-        <p>
-          Un servidor de señalización propio media el handshake inicial WebRTC.
-          Solo ve identificadores de sala opacos y direcciones IP necesarias
-          para conectar peers; nunca ve el contenido de tus calendarios.
-        </p>
-
-        <h2>Respaldo en Google Drive (opcional)</h2>
-        <p>Si decides conectar Google Drive:</p>
-        <ul>
-          <li>
-            Markal solicita únicamente el permiso <code>drive.file</code>, que
-            otorga acceso solo a los archivos que la app misma crea.
-          </li>
-          <li>
-            El respaldo es un archivo JSON cifrado con tu propia contraseña,
-            almacenado en tu cuenta de Drive (no la nuestra).
-          </li>
-          <li>
-            La contraseña de cifrado nunca sale de tu navegador. La derivamos
-            con PBKDF2-SHA256 (600 000 iteraciones) y ciframos con AES-GCM-256
-            antes de subir el archivo.
-          </li>
-          <li>
-            Markal no puede leer el contenido descifrado de tus respaldos.
-          </li>
-          <li>
-            Puedes revocar el acceso desde tu
-            <a
-              href="https://myaccount.google.com/permissions"
-              target="_blank"
-              rel="noopener noreferrer"
-            >cuenta de Google</a>
-            en cualquier momento.
-          </li>
-        </ul>
-
-        <h2>Tus derechos</h2>
-        <ul>
-          <li>
-            <strong>Acceso:</strong> todos tus datos están en tu navegador;
-            puedes inspeccionarlos con las DevTools.
-          </li>
-          <li>
-            <strong>Eliminación:</strong> borrar el storage del sitio en tu
-            navegador elimina toda la información local.
-          </li>
-          <li>
-            <strong>Portabilidad:</strong> Markal incluye export/import a
-            archivo, con opción de cifrarlo con tu contraseña.
-          </li>
-        </ul>
-
-        <h2>Cambios a esta política</h2>
-        <p>
-          Si esta política cambia, lo reflejaremos en esta misma página con su
-          fecha de actualización. Markal es software de código abierto y los
-          cambios quedan en el historial público del repositorio.
-        </p>
-
-        <h2>Contacto</h2>
-        <p>
-          ¿Preguntas o solicitudes relacionadas con privacidad? Escribe a
-          <a href="mailto:adriandomc@gmail.com">adriandomc@gmail.com</a>.
-        </p>
-      </article>
-
-      <article data-locale-content="en">
-        <h1>Privacy policy</h1>
-        <p class="meta">Last updated: May 23, 2026</p>
-
-        <p class="lead">
-          Markal does not store your calendars on central servers. Your data
-          lives only in your browser and, optionally, in your own Google Drive
-          account if you choose to enable backup. This page covers the details.
-        </p>
-
-        <h2>What is stored on your device</h2>
-        <ul>
-          <li>
-            <strong>Calendars, legends, and marks:</strong> in your browser's
-            local storage (IndexedDB).
-          </li>
-          <li>
-            <strong>App preferences</strong> (language, sidebar state): in
-            <code>localStorage</code>.
-          </li>
-          <li>
-            <strong>Google Drive OAuth tokens</strong> (only if you connect
-            Drive): in your browser's IndexedDB.
-          </li>
-        </ul>
-
-        <h2>What we don't do</h2>
-        <ul>
-          <li>No user accounts. No central database of calendars.</li>
-          <li>No tracking cookies. No analytics.</li>
-          <li>
-            We don't sell, rent, or share information with third parties.
-          </li>
-        </ul>
-
-        <h2>Sharing calendars between devices</h2>
-        <p>
-          When you share a calendar, the data travels directly between the
-          participants' browsers via WebRTC, end-to-end encrypted with
-          AES-GCM-256. The encryption key travels in the fragment
-          (<code>#</code>) of the invitation link, which by design never reaches
-          any server.
-        </p>
-        <p>
-          A self-hosted signaling server mediates the initial WebRTC handshake.
-          It only sees opaque room identifiers and IP addresses needed to
-          connect peers; it never sees the content of your calendars.
-        </p>
-
-        <h2>Google Drive backup (optional)</h2>
-        <p>If you choose to connect Google Drive:</p>
-        <ul>
-          <li>
-            Markal requests only the <code>drive.file</code> scope, which
-            grants access strictly to files the app itself creates.
-          </li>
-          <li>
-            The backup is a JSON file encrypted with your own passphrase,
-            stored in your Drive account (not ours).
-          </li>
-          <li>
-            The encryption passphrase never leaves your browser. We derive it
-            with PBKDF2-SHA256 (600,000 iterations) and encrypt with
-            AES-GCM-256 before uploading.
-          </li>
-          <li>Markal cannot read the decrypted contents of your backups.</li>
-          <li>
-            You can revoke access from your
-            <a
-              href="https://myaccount.google.com/permissions"
-              target="_blank"
-              rel="noopener noreferrer"
-            >Google account</a>
-            at any time.
-          </li>
-        </ul>
-
-        <h2>Your rights</h2>
-        <ul>
-          <li>
-            <strong>Access:</strong> all your data lives in your browser; you
-            can inspect it with DevTools.
-          </li>
-          <li>
-            <strong>Deletion:</strong> clearing your site storage in your
-            browser removes all local information.
-          </li>
-          <li>
-            <strong>Portability:</strong> Markal includes file export/import,
-            with the option to encrypt with your passphrase.
-          </li>
-        </ul>
-
-        <h2>Changes to this policy</h2>
-        <p>
-          If this policy changes, we'll reflect it on this same page with its
-          update date. Markal is open source, and the changes remain in the
-          public repository history.
-        </p>
-
-        <h2>Contact</h2>
-        <p>
-          Privacy-related questions or requests? Write to
-          <a href="mailto:adriandomc@gmail.com">adriandomc@gmail.com</a>.
-        </p>
-      </article>
-
-      <footer>
-        <a href="/" data-locale-content="es">← Volver a Markal</a>
-        <a href="/" data-locale-content="en">← Back to Markal</a>
-      </footer>
+      <markal-privacy></markal-privacy>
+      <markal-site-footer></markal-site-footer>
     </main>
 
-    <script is:inline>
-      (function () {
-        var doc = document.documentElement;
-        function setLocale(locale) {
-          doc.setAttribute("lang", locale);
-          doc.setAttribute("data-locale", locale);
-          try {
-            localStorage.setItem("markal.locale", locale);
-          } catch (_) {}
-          updateActive();
-        }
-        function updateActive() {
-          var current = doc.getAttribute("data-locale") || "es";
-          document.querySelectorAll("[data-locale-toggle]").forEach(
-            function (btn) {
-              var target = btn.getAttribute("data-locale-toggle");
-              btn.classList.toggle("is-active", target === current);
-              btn.setAttribute(
-                "aria-pressed",
-                target === current ? "true" : "false",
-              );
-            },
+    <script>
+      import "../components/markal-privacy.ts";
+      import "../components/markal-site-footer.ts";
+      import { initLocalization, changeLocale } from "../i18n/setup.ts";
+
+      const doc = document.documentElement;
+
+      function updateActive() {
+        const current = doc.getAttribute("data-locale") || "es";
+        document.querySelectorAll("[data-locale-toggle]").forEach((btn) => {
+          const target = btn.getAttribute("data-locale-toggle");
+          btn.classList.toggle("is-active", target === current);
+          btn.setAttribute(
+            "aria-pressed",
+            target === current ? "true" : "false"
           );
-        }
-        document.querySelectorAll("[data-locale-toggle]").forEach(
-          function (btn) {
-            btn.addEventListener("click", function () {
-              setLocale(btn.getAttribute("data-locale-toggle") || "es");
-            });
-          },
-        );
+        });
+      }
+
+      // Inicializa la localización usando el sistema de Lit y actualiza botones
+      initLocalization().then(() => {
         updateActive();
-      })();
+
+        // Suscribe cambios de idioma para botones en header
+        document.querySelectorAll("[data-locale-toggle]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const locale = btn.getAttribute("data-locale-toggle") || "es";
+            changeLocale(locale as any).then(() => {
+              updateActive();
+            });
+          });
+        });
+      });
     </script>
   </body>
 </html>

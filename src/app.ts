@@ -85,16 +85,7 @@ import {
   parseBackupText,
   suggestedBackupFilename,
 } from "./lib/cloud/backup.ts";
-import {
-  completeDriveOAuth,
-  disconnectDrive,
-  isDriveConfigured,
-  isDriveConnected,
-  isOAuthCallbackPath,
-  pullBackupFromDrive,
-  pushBackupToDrive,
-  startDriveOAuth,
-} from "./lib/cloud/drive.ts";
+
 
 const MOBILE_QUERY = "(max-width: 980px)";
 const APP_VERSION = "0.1.0";
@@ -123,10 +114,7 @@ export class MarkalApp extends LitElement {
     exportPassphrase: { state: true },
     pendingImportEnvelope: { state: true },
     importPassphrase: { state: true },
-    driveConnected: { state: true },
-    driveConfigured: { state: true },
-    drivePassphrase: { state: true },
-    driveLastSync: { state: true },
+
     connectedPeers: { state: true },
     peersOpen: { state: true },
     userName: { state: true },
@@ -152,10 +140,7 @@ export class MarkalApp extends LitElement {
   exportPassphrase = "";
   pendingImportEnvelope: EncryptedEnvelope | null = null;
   importPassphrase = "";
-  driveConnected = false;
-  driveConfigured = false;
-  drivePassphrase = "";
-  driveLastSync: string | null = null;
+
   connectedPeers = 0;
   peersOpen = false;
   userName = "";
@@ -224,15 +209,7 @@ export class MarkalApp extends LitElement {
 
   private async initStorage(): Promise<void> {
     try {
-      // 0. If we're returning from a Google OAuth redirect, complete the
-      //    handshake and bounce to the original target — no storage work
-      //    needed in this short-lived page.
-      if (await this.maybeHandleOAuthCallback()) {
-        return;
-      }
 
-      this.driveConfigured = isDriveConfigured();
-      this.restoreOAuthFlash();
 
       // 1. Open storage (loads existing calendars, but does NOT auto-seed
       //    a default — we want to give share-landing a chance to populate first).
@@ -264,54 +241,13 @@ export class MarkalApp extends LitElement {
         if (info) this.connectCalendarSync(doc.id, info);
       }
 
-      // 5. Refresh Drive connection status (async, fire-and-forget).
-      void this.refreshDriveStatus();
+
     } finally {
       this.loading = false;
     }
   }
 
-  private async maybeHandleOAuthCallback(): Promise<boolean> {
-    if (typeof location === "undefined") return false;
-    if (!isOAuthCallbackPath(location.pathname)) return false;
-    try {
-      const { returnTo } = await completeDriveOAuth();
-      sessionStorage.setItem("markal.oauth.flash", "drive-connected");
-      location.replace(returnTo);
-    } catch (e) {
-      sessionStorage.setItem(
-        "markal.oauth.flash",
-        "error:" + (e instanceof Error ? e.message : String(e)),
-      );
-      location.replace("/");
-    }
-    return true;
-  }
 
-  private restoreOAuthFlash(): void {
-    try {
-      const flash = sessionStorage.getItem("markal.oauth.flash");
-      if (!flash) return;
-      sessionStorage.removeItem("markal.oauth.flash");
-      if (flash === "drive-connected") {
-        this.settingsOpen = true;
-      } else if (flash.startsWith("error:")) {
-        this.backupMessage = flash.slice("error:".length);
-        this.backupError = true;
-        this.settingsOpen = true;
-      }
-    } catch {
-      // sessionStorage unavailable
-    }
-  }
-
-  private async refreshDriveStatus(): Promise<void> {
-    try {
-      this.driveConnected = await isDriveConnected();
-    } catch {
-      this.driveConnected = false;
-    }
-  }
 
   private async maybeHandleShareLanding(): Promise<void> {
     if (typeof location === "undefined") return;
@@ -573,66 +509,7 @@ export class MarkalApp extends LitElement {
     this.clearBackupMessage();
   };
 
-  private connectDrive = async (): Promise<void> => {
-    try {
-      await startDriveOAuth("/");
-    } catch (error) {
-      this.setBackupError(error);
-    }
-  };
 
-  private disconnectDriveAction = async (): Promise<void> => {
-    try {
-      await disconnectDrive();
-      this.driveConnected = false;
-      this.drivePassphrase = "";
-      this.driveLastSync = null;
-      this.setBackupMessage(msg("Drive desconectado"), false);
-    } catch (error) {
-      this.setBackupError(error);
-    }
-  };
-
-  private pushDrive = async (): Promise<void> => {
-    if (!this.drivePassphrase.trim()) {
-      this.setBackupMessage(msg("Ingresa una contraseña de cifrado"), true);
-      return;
-    }
-    try {
-      this.backupBusy = "push";
-      this.clearBackupMessage();
-      const result = await pushBackupToDrive(this.drivePassphrase);
-      this.driveLastSync = new Date(result.modifiedTime).toLocaleString();
-      this.setBackupMessage(msg("Respaldo subido a Drive"), false);
-    } catch (error) {
-      this.setBackupError(error);
-    } finally {
-      this.backupBusy = null;
-    }
-  };
-
-  private pullDrive = async (): Promise<void> => {
-    if (!this.drivePassphrase.trim()) {
-      this.setBackupMessage(msg("Ingresa la contraseña de cifrado"), true);
-      return;
-    }
-    try {
-      this.backupBusy = "pull";
-      this.clearBackupMessage();
-      const result = await pullBackupFromDrive(this.drivePassphrase);
-      if (!result) {
-        this.setBackupMessage(msg("No hay respaldo en Drive todavía"), true);
-        return;
-      }
-      this.driveLastSync = new Date(result.modifiedTime).toLocaleString();
-      this.refreshFromStorage();
-      this.setBackupMessage(msg("Respaldo descargado de Drive"), false);
-    } catch (error) {
-      this.setBackupError(error);
-    } finally {
-      this.backupBusy = null;
-    }
-  };
 
   private refreshFromStorage(): void {
     const snapshot = getCollectionSnapshot();
@@ -830,10 +707,7 @@ export class MarkalApp extends LitElement {
         .userName="${this.userName}"
         .settings="${this.selectedDocument.settings}"
         .currentLocale="${this.currentLocale}"
-        ?driveConfigured="${this.driveConfigured}"
-        ?driveConnected="${this.driveConnected}"
-        .drivePassphrase="${this.drivePassphrase}"
-        .driveLastSync="${this.driveLastSync}"
+
         ?exportPanelOpen="${this.exportPanelOpen}"
         .exportPassphrase="${this.exportPassphrase}"
         .pendingImportEnvelope="${this.pendingImportEnvelope}"
@@ -861,13 +735,7 @@ export class MarkalApp extends LitElement {
         @import-passphrase-change="${(e: CustomEvent<string>) => {
           this.importPassphrase = e.detail;
         }}"
-        @drive-connect="${this.connectDrive}"
-        @drive-disconnect="${this.disconnectDriveAction}"
-        @drive-push="${this.pushDrive}"
-        @drive-pull="${this.pullDrive}"
-        @drive-passphrase-change="${(e: CustomEvent<string>) => {
-          this.drivePassphrase = e.detail;
-        }}"
+
       ></markal-settings-modal>
     `;
   }

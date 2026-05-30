@@ -23,10 +23,7 @@ export class MarkalSettingsModal extends LitElement {
     userName: { type: String },
     settings: { attribute: false },
     currentLocale: { type: String },
-    driveConfigured: { type: Boolean },
-    driveConnected: { type: Boolean },
-    drivePassphrase: { type: String },
-    driveLastSync: { type: String },
+
     exportPanelOpen: { type: Boolean },
     exportPassphrase: { type: String },
     pendingImportEnvelope: { attribute: false },
@@ -40,10 +37,7 @@ export class MarkalSettingsModal extends LitElement {
   userName = "";
   settings: CalendarSettings = { showOutMonthMarks: true, maxMarksPerDay: 4, selectWeekends: true };
   currentLocale: LocaleCode = "es";
-  driveConfigured = false;
-  driveConnected = false;
-  drivePassphrase = "";
-  driveLastSync: string | null = null;
+
   exportPanelOpen = false;
   exportPassphrase = "";
   pendingImportEnvelope: EncryptedEnvelope | null = null;
@@ -215,13 +209,7 @@ export class MarkalSettingsModal extends LitElement {
                     @change="${this.handleFileChosen}"
                   />
                 </div>
-                <div class="backup-block">
-                  <div class="backup-block-title">
-                    <i class="ph ph-google-drive-logo"></i>
-                    ${msg("Google Drive")}
-                  </div>
-                  ${this.renderDrivePanel()}
-                </div>
+
                 ${this.backupMessage
                   ? html`
                     <div
@@ -325,92 +313,7 @@ export class MarkalSettingsModal extends LitElement {
     `;
   }
 
-  private renderDrivePanel() {
-    if (!this.driveConfigured) {
-      return html`
-        <p class="backup-help">
-          ${msg(
-            "Drive no está habilitado en esta instancia. El operador necesita registrar un OAuth client_id de Google.",
-          )}
-        </p>
-      `;
-    }
-    if (!this.driveConnected) {
-      return html`
-        <p class="backup-help">
-          ${msg(
-            "Guarda un respaldo cifrado en tu propia cuenta de Drive. Markal nunca verá la contraseña ni los datos descifrados.",
-          )}
-        </p>
-        <button
-          class="backup-btn primary"
-          type="button"
-          @click="${() => this.emit("drive-connect")}"
-        >
-          <i class="ph ph-google-drive-logo"></i>
-          ${msg("Conectar Google Drive")}
-        </button>
-      `;
-    }
-    return html`
-      <p class="backup-help">
-        ${msg(
-          "Si olvidas la contraseña no podemos descifrar tu respaldo. Guárdala en un lugar seguro.",
-        )}
-      </p>
-      ${this.driveLastSync
-        ? html`
-          <p class="backup-meta">
-            ${msg(str`Última sincronización: ${this.driveLastSync}`)}
-          </p>
-        `
-        : nothing}
-      <label class="backup-field">
-        <span class="backup-field-label">
-          ${msg("Contraseña de cifrado")}
-        </span>
-        <input
-          class="backup-input"
-          type="password"
-          autocomplete="off"
-          .value="${this.drivePassphrase}"
-          @input="${(event: Event) =>
-            this.emit(
-              "drive-passphrase-change",
-              (event.target as HTMLInputElement).value,
-            )}"
-        />
-      </label>
-      <div class="backup-panel-actions">
-        <button
-          class="backup-btn primary"
-          type="button"
-          ?disabled="${this.backupBusy !== null}"
-          @click="${() => this.emit("drive-push")}"
-        >
-          <i class="ph ph-cloud-arrow-up"></i>
-          ${msg("Subir a Drive")}
-        </button>
-        <button
-          class="backup-btn"
-          type="button"
-          ?disabled="${this.backupBusy !== null}"
-          @click="${() => this.emit("drive-pull")}"
-        >
-          <i class="ph ph-cloud-arrow-down"></i>
-          ${msg("Descargar de Drive")}
-        </button>
-        <button
-          class="backup-btn ghost"
-          type="button"
-          @click="${() => this.emit("drive-disconnect")}"
-        >
-          <i class="ph ph-sign-out"></i>
-          ${msg("Desconectar")}
-        </button>
-      </div>
-    `;
-  }
+
 
   private openFilePicker = (): void => {
     const input = this.renderRoot.querySelector<HTMLInputElement>(
