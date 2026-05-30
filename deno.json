@@ -4,7 +4,7 @@
     "dev": "deno run -A npm:astro dev",
     "build": "deno run -A npm:astro build",
     "preview": "deno run -A npm:astro preview",
-    "start": "deno run -A --unstable-bare-node-builtins --unstable-detect-cjs ./dist/server/entry.mjs",
+    "start": "deno run -A --unstable-bare-node-builtins --unstable-detect-cjs server.mjs",
     "check": "deno run -A npm:astro check",
     "test": "deno test --allow-env",
     "i18n:extract": "deno run -A npm:@lit/localize-tools/bin/lit-localize.js extract",
