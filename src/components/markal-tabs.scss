@@ -5,6 +5,12 @@
 }
 
 .tab-bar {
+  position: sticky;
+  top: -1rem;
+  background: var(--surface);
+  z-index: 2;
+  padding-top: 1rem;
+  margin-top: -1rem;
   display: flex;
   flex-wrap: wrap;
   gap: 0 1.25rem;
