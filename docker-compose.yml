@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    command: node server.mjs
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  signaling:
+    build: .
+    # Override default CMD to run the WebRTC signaling server
+    command: node server/signaling/index.js
+    ports:
+      - "4444:4444"
+    restart: unless-stopped
