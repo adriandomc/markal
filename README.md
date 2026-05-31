@@ -9,4 +9,21 @@ Markal is an open source productivity tool for creating interactive, collaborati
 - Multi-language localization
 
 # Self-hosting Markal
-_Work in progress_
+Markal includes configuration files for Docker and [Fly.io](https://fly.io).
+Note: Markal uses a signaling server to support WebRTC for peer-to-peer communication, however it can work without it (for a local-first approach).
+
+## Docker
+The easiest way is to set it up is using Docker Compose, using the provided ```docker-compose.yml``` file.
+
+To run it, just execute the following command:
+
+```bash
+docker-compose up -d
+```
+## Fly.io
+To deploy it using Fly, use the provided ```fly.toml``` file. Please note that it will use two virtual machines, one for the web app and the other for the signaling server (separated as processes within the same app).
+
+You can then deploy it using:
+```bash
+flyctl deploy
+```
