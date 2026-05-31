@@ -1,27 +1,35 @@
 app = "markal"
-primary_region = "gru"
+primary_region = "mia"
 
 [build]
+  dockerfile = "Dockerfile"
 
-[env]
-  HOST = "0.0.0.0"
-  PORT = "8080"
+# Split architecture into two separate processes/machines
+[processes]
+  web = "node server.mjs"
+  signaling = "node server/signaling/index.js"
 
-[http_service]
+# Public service for the Web Application
+[[services]]
+  processes = ["web"]
   internal_port = 8080
-  force_https = true
-  auto_stop_machines = "stop"
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ["app"]
+  protocol = "tcp"
+  
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+    force_https = true
+    
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
 
-  [http_service.http_options.response.headers]
-    Strict-Transport-Security = "max-age=31536000; includeSubdomains; preload"
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://www.googleapis.com wss: stun: turn:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self';"
-
-[[vm]]
-  size = "shared-cpu-1x"
-  memory = "1gb"
+# Public service for the WebRTC Signaling Server
+[[services]]
+  processes = ["signaling"]
+  internal_port = 4444
+  protocol = "tcp"
+  
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 4444
