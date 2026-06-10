@@ -13,6 +13,21 @@ export interface LegendItem {
   fillColor: string;
 }
 
+export interface Activity {
+  id: string;
+  label:string;
+  fillColor: string;
+}
+
+export interface ScheduledBlock {
+  id: string;
+  activityId: string;
+  startDate: DateKey;
+  endDate: DateKey;
+  startMinutes: number;
+  endMinutes: number;
+}
+
 export interface CalendarSettings {
   showOutMonthMarks: boolean;
   maxMarksPerDay: number;
