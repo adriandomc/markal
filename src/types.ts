@@ -1,6 +1,7 @@
 export type DateKey = string;
 export type ViewMode = "week" | "months" | "years";
 export type MarkAction = "add" | "remove";
+export type BoardMode = "marks" | "schedule";
 
 export interface DateRange {
   start: DateKey;
