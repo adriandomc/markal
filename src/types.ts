@@ -44,6 +44,8 @@ export interface CalendarDocument {
   dateRange: DateRange;
   legends: LegendItem[];
   marks: Record<DateKey, string[]>;
+  activities: Activity[];
+  blocks: Record<string, ScheduledBlock>;
   settings: CalendarSettings;
 }
 
