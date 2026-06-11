@@ -54,6 +54,10 @@ export const iconStyles = css`
     content: "\\e408";
   }
 
+  .ph.ph-sun-horizon::before {
+    content: "\\e5b6";
+  }
+
   .ph.ph-file-pdf::before {
     content: "\\e702";
   }
