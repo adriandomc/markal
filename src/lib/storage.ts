@@ -7,6 +7,8 @@ import type {
   DateKey,
   DateRange,
   LegendItem,
+  Activity,
+  ScheduledBlock
 } from "../types.ts";
 import { createCalendarDocument, DEFAULT_SETTINGS } from "./calendar-doc.ts";
 import { clampMaxMarksPerDay } from "./marks.ts";
@@ -587,6 +589,38 @@ function readMarks(map: Y.Map<unknown>): Record<DateKey, string[]> {
   return result;
 }
 
+function readActivity(map: Y.Map<unknown>): Activity {
+  return {
+    id: map.get("id") as string,
+    label: (map.get("label") as string) ?? "",
+    fillColor: (map.get("fillColor") as string) ?? "",
+  };
+}
+
+function readBlocks(map: Y.Map<unknown>): Record<string, ScheduledBlock> {
+  const result: Record<string, ScheduledBlock> = {};
+  map.forEach((value: any, key: any) => {
+    if (!(value instanceof Y.Map)) return;
+    const block: ScheduledBlock = {
+      id: key,
+      activityId: (value.get("activityId") as string) ?? "",
+      startDate: (value.get("startDate") as string) ?? "",
+      endDate: (value.get("endDate") as string) ?? "",
+      startMinutes: typeof value.get("startMinutes") === "number"
+        ? (value.get("startMinutes") as number)
+        : 0,
+      endMinutes: typeof value.get("endMinutes") === "number"
+        ? (value.get("endMinutes") as number)
+        : 0,
+    };
+
+    if (block.activityId && block.startDate && block.endDate && block.endMinutes > block.startMinutes) {
+      result[key] = block;
+    }
+  });
+  return result;
+}
+
 function readSettings(map: Y.Map<unknown>): CalendarSettings {
   return {
     showOutMonthMarks: typeof map.get("showOutMonthMarks") === "boolean"
@@ -622,6 +656,12 @@ function readDocument(map: Y.Map<unknown>, id: string): CalendarDocument {
     settings: map.get("settings") instanceof Y.Map
       ? readSettings(map.get("settings") as Y.Map<unknown>)
       : { ...DEFAULT_SETTINGS },
+    activities: map.get("activities") instanceof Y.Array
+      ? (map.get("activities") as Y.Array<Y.Map<unknown>>).map(readActivity)
+      : [],
+    blocks: map.get("blocks") instanceof Y.Map
+      ? readBlocks(map.get("blocks") as Y.Map<unknown>)
+      : {},
   };
 }
 
