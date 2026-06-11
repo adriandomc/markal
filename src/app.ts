@@ -43,6 +43,8 @@ import {
 } from "./lib/calendar-doc.ts";
 import { normalizeRange, parseDateKey } from "./lib/dates.ts";
 import { cleanBlocks, clampBlockTimes } from "./lib/blocks.ts";
+import { buildStandaloneHtml } from "./lib/html-export.ts";
+import { weekdayNarrowLabels } from "./lib/i18n-labels.ts";
 import { iconStyles } from "./lib/icon-styles.ts";
 import { localStyles } from "./lib/lit-styles.ts";
 import {
@@ -1482,7 +1484,11 @@ export class MarkalApp extends LitElement {
     });
   };
 
-  private exportCalendar = async (format: "png" | "pdf"): Promise<void> => {
+  private exportCalendar = async (format: ExportFormat): Promise<void> => {
+    if (format === "html") {
+      this.exportHtml();
+      return;
+    }
     const formatLabel = format.toUpperCase();
     this.exportMessage = msg(str`Preparando ${formatLabel}`);
 
@@ -1513,6 +1519,39 @@ export class MarkalApp extends LitElement {
       anchor.click();
       URL.revokeObjectURL(url);
       this.exportMessage = msg(str`${formatLabel} listo`);
+    } catch (error) {
+      this.exportMessage = error instanceof Error
+        ? error.message
+        : msg("No se pudo exportar");
+    }
+  };
+
+  // Self-contained, read-only HTML — built client-side (no server) so it works
+  // offline and is shareable as a single file.
+  private exportHtml = (): void => {
+    try {
+      const html = buildStandaloneHtml(this.selectedDocument, {
+        locale: getLocale(),
+        initialView: this.boardMode,
+        labels: {
+          monthView: msg("Vista de mes"),
+          weekView: msg("Vista de semana"),
+          today: msg("Hoy"),
+          prevWeek: msg("Semana anterior"),
+          nextWeek: msg("Semana siguiente"),
+          legends: msg("Leyendas"),
+          activities: msg("Actividades"),
+          readOnly: msg("Solo lectura"),
+          weekdays: weekdayNarrowLabels(),
+        },
+      });
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const filename = `${
+        this.selectedDocument.title.replace(/[^\w-]+/g, "-").toLowerCase() ||
+        "markal"
+      }.html`;
+      downloadBlobAsFile(blob, filename);
+      this.exportMessage = msg("HTML listo");
     } catch (error) {
       this.exportMessage = error instanceof Error
         ? error.message

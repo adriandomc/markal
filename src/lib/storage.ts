@@ -593,13 +593,13 @@ function readActivity(map: Y.Map<unknown>): Activity {
   return {
     id: map.get("id") as string,
     label: (map.get("label") as string) ?? "",
-    fillColor: (map.get("fillColor") as string) ?? "",
+    fillColor: (map.get("fillColor") as string) ?? "#a2c8f3",
   };
 }
 
 function readBlocks(map: Y.Map<unknown>): Record<string, ScheduledBlock> {
   const result: Record<string, ScheduledBlock> = {};
-  map.forEach((value: any, key: any) => {
+  map.forEach((value, key) => {
     if (!(value instanceof Y.Map)) return;
     const block: ScheduledBlock = {
       id: key,
@@ -690,24 +690,37 @@ function writeDateRange(map: Y.Map<unknown>, range: DateRange): void {
   setIfChanged(map, "end", range.end);
 }
 
-function writeLegendInto(map: Y.Map<unknown>, legend: LegendItem): void {
-  setIfChanged(map, "id", legend.id);
-  setIfChanged(map, "label", legend.label);
-  setIfChanged(map, "fillColor", legend.fillColor);
+interface ColorItem {
+  id: string;
+  label: string;
+  fillColor: string;
 }
 
-function writeLegends(
+function writeColorItemInto(map: Y.Map<unknown>, item: ColorItem): void {
+  setIfChanged(map, "id", item.id);
+  setIfChanged(map, "label", item.label);
+  setIfChanged(map, "fillColor", item.fillColor);
+}
+
+/**
+ * Diff-write an ordered array of {id,label,fillColor} items into a Y.Array.
+ * Shared by legends and activities (structurally identical). When membership
+ * and order are unchanged it patches fields in place to preserve CRDT history
+ * for concurrent label/color edits from peers; otherwise it rebuilds the array
+ * (Y.Array has no move op) so reorderings reach peers.
+ */
+function writeColorItems(
   arr: Y.Array<Y.Map<unknown>>,
-  legends: LegendItem[],
+  items: ColorItem[],
 ): void {
   const currentIds: string[] = [];
   const currentById = new Map<string, Y.Map<unknown>>();
-  arr.forEach((legendMap) => {
-    const id = legendMap.get("id") as string;
+  arr.forEach((itemMap) => {
+    const id = itemMap.get("id") as string;
     currentIds.push(id);
-    currentById.set(id, legendMap);
+    currentById.set(id, itemMap);
   });
-  const targetIds = legends.map((l) => l.id);
+  const targetIds = items.map((item) => item.id);
   const targetIdSet = new Set(targetIds);
 
   const sameMembership = currentIds.length === targetIds.length &&
@@ -716,25 +729,58 @@ function writeLegends(
     currentIds.every((id, i) => id === targetIds[i]);
 
   if (sameOrder) {
-    // Same set + same order: patch fields in place to preserve CRDT history
-    // for concurrent label/color edits from peers.
-    for (const legend of legends) {
-      const existing = currentById.get(legend.id);
-      if (existing) writeLegendInto(existing, legend);
+    for (const item of items) {
+      const existing = currentById.get(item.id);
+      if (existing) writeColorItemInto(existing, item);
     }
     return;
   }
 
-  // Order changed (or membership): rebuild the array so reorderings reach
-  // peers. Y.Array doesn't support moving entries, so we tombstone the old
-  // entries and insert fresh Y.Maps in the target order.
   if (arr.length > 0) arr.delete(0, arr.length);
-  const fresh: Y.Map<unknown>[] = legends.map((legend) => {
+  const fresh: Y.Map<unknown>[] = items.map((item) => {
     const map = new Y.Map<unknown>();
-    writeLegendInto(map, legend);
+    writeColorItemInto(map, item);
     return map;
   });
   if (fresh.length > 0) arr.push(fresh);
+}
+
+function writeLegends(
+  arr: Y.Array<Y.Map<unknown>>,
+  legends: LegendItem[],
+): void {
+  writeColorItems(arr, legends);
+}
+
+function writeActivities(
+  arr: Y.Array<Y.Map<unknown>>,
+  activities: Activity[],
+): void {
+  writeColorItems(arr, activities);
+}
+
+function writeBlocks(
+  map: Y.Map<unknown>,
+  blocks: Record<string, ScheduledBlock>,
+): void {
+  // Delete blocks that no longer exist (same pattern as writeMarks).
+  const targetIds = new Set(Object.keys(blocks));
+  const toDelete: string[] = [];
+  map.forEach((_, key) => {
+    if (!targetIds.has(key)) toDelete.push(key);
+  });
+  for (const key of toDelete) map.delete(key);
+
+  // Field-by-field with setIfChanged so two peers resizing different edges of
+  // the same block merge without conflict (CRDT).
+  for (const [id, block] of Object.entries(blocks)) {
+    const blockMap = getOrCreateMap(map, id);
+    setIfChanged(blockMap, "activityId", block.activityId);
+    setIfChanged(blockMap, "startDate", block.startDate);
+    setIfChanged(blockMap, "endDate", block.endDate);
+    setIfChanged(blockMap, "startMinutes", block.startMinutes);
+    setIfChanged(blockMap, "endMinutes", block.endMinutes);
+  }
 }
 
 function writeMarks(
@@ -805,6 +851,11 @@ function writeDocument(map: Y.Map<unknown>, document: CalendarDocument): void {
     document.legends,
   );
   writeMarks(getOrCreateMap(map, "marks"), document.marks);
+  writeActivities(
+    getOrCreateArray<Y.Map<unknown>>(map, "activities"),
+    document.activities,
+  );
+  writeBlocks(getOrCreateMap(map, "blocks"), document.blocks);
   writeSettings(getOrCreateMap(map, "settings"), document.settings);
 }
 
@@ -822,6 +873,12 @@ function normalizeCollection(
         label: legend.label,
         fillColor: legend.fillColor,
       })),
+      activities: (document.activities ?? []).map((activity) => ({
+        id: activity.id,
+        label: activity.label,
+        fillColor: activity.fillColor,
+      })),
+      blocks: document.blocks ?? {},
       settings: {
         showOutMonthMarks: typeof document.settings?.showOutMonthMarks ===
             "boolean"
