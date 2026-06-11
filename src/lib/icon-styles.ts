@@ -14,6 +14,10 @@ export const iconStyles = css`
     -moz-osx-font-smoothing: grayscale;
   }
 
+  .ph.ph-calendar-blank::before {
+    content: "\\e10a";
+  }
+
   .ph.ph-calendar-dots::before {
     content: "\\e7b4";
   }
