@@ -18,16 +18,22 @@ function timeValueToMinutes(value: string): number {
   return (h ?? 0) * 60 + (m ?? 0);
 }
 
+export interface BlockActivityChangeDetail {
+  blockId: string;
+  patch: Partial<Activity>;
+}
+
 export class MarkalBlockEditor extends LitElement {
   static properties = {
     open: { type: Boolean, reflect: true },
     block: { attribute: false },
-    activities: { attribute: false },
+    activity: { attribute: false },
   };
 
   open = false;
   block: ScheduledBlock | null = null;
-  activities: Activity[] = [];
+  /** The block's own activity (resolved by the parent), edited in place here. */
+  activity: Activity | null = null;
 
   constructor() {
     super();
@@ -35,6 +41,23 @@ export class MarkalBlockEditor extends LitElement {
   }
 
   static styles = [iconStyles, localStyles(blockEditorStyles)];
+
+  protected updated(changed: Map<string, unknown>): void {
+    // Focus the name field when the editor opens so a freshly-created block can
+    // be named immediately. Double rAF so this runs *after* markal-modal's own
+    // focus pass (which otherwise lands on the dialog and steals it).
+    if (changed.has("open") && this.open && this.block) {
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const input = this.shadowRoot?.querySelector<HTMLInputElement>(
+            ".activity-name-input",
+          );
+          input?.focus();
+          input?.select();
+        })
+      );
+    }
+  }
 
   render() {
     return html`
@@ -50,21 +73,36 @@ export class MarkalBlockEditor extends LitElement {
   }
 
   private renderBody(block: ScheduledBlock) {
+    const label = this.activity?.label ?? "";
+    const fillColor = this.activity?.fillColor ?? "#a2c8f3";
     return html`
       <div class="editor-body">
-        <div class="activity-chips">
-          ${this.activities.map((activity) =>
-            html`
-              <button
-                type="button"
-                class="chip ${activity.id === block.activityId
-                  ? "selected"
-                  : ""}"
-                style="--chip-color: ${activity.fillColor}"
-                @click="${() => this.patch({ activityId: activity.id })}"
-              >${activity.label || msg("Actividad")}</button>
-            `
-          )}
+        <div class="activity-field">
+          <label
+            class="style-preview"
+            style="background: ${fillColor}"
+            aria-label="${msg("Color de la actividad")}"
+          >
+            <input
+              type="color"
+              .value="${fillColor}"
+              @input="${(e: Event) =>
+                this.patchActivity({
+                  fillColor: (e.target as HTMLInputElement).value,
+                })}"
+            />
+          </label>
+          <input
+            class="activity-name-input"
+            type="text"
+            placeholder="${msg("Nombre de la actividad")}"
+            aria-label="${msg("Nombre de la actividad")}"
+            .value="${label}"
+            @input="${(e: Event) =>
+              this.patchActivity({
+                label: (e.target as HTMLInputElement).value,
+              })}"
+          />
         </div>
         <div class="field-row">
           <label>
@@ -136,6 +174,17 @@ export class MarkalBlockEditor extends LitElement {
     this.dispatchEvent(
       new CustomEvent<BlockUpdateDetail>("block-update", {
         detail: { id: this.block.id, patch },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private patchActivity(patch: Partial<Activity>): void {
+    if (!this.block) return;
+    this.dispatchEvent(
+      new CustomEvent<BlockActivityChangeDetail>("block-activity-change", {
+        detail: { blockId: this.block.id, patch },
         bubbles: true,
         composed: true,
       }),

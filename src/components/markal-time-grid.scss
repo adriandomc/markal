@@ -2,6 +2,15 @@
 
 @include host-block;
 
+// Global `box-sizing: border-box` (styles.scss/app.scss) does NOT cross the
+// shadow boundary — without this, .block-segment padding adds to its %-based
+// height/width and every block overshoots its slot and its column.
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :host {
   --hour-height: 3rem;
   --gutter-width: 3.5rem;
@@ -29,10 +38,37 @@
   }
 
   .week-label {
+    @include control-reset;
+    position: relative;
     margin-left: auto;
+    padding: 0.375rem 0.5rem;
+    border-radius: 4px;
     font-size: 0.95rem;
     font-weight: 750;
     color: var(--ink);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--surface-muted);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+
+    // Native date input overlaid so a direct tap opens the picker even where
+    // showPicker() is unavailable (older Safari). Invisible but interactive.
+    .week-picker {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
   }
 }
 
@@ -122,14 +158,11 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  // Hour lines without 24 divs: a repeating gradient.
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(var(--hour-height) - 1px),
-    var(--border) calc(var(--hour-height) - 1px),
-    var(--border) var(--hour-height)
-  );
+  // Hour lines in the SAME %-of-column system the blocks use (one line per
+  // 1/24 of the height) so lines and block edges stay pixel-aligned. Using
+  // background-image (not the shorthand) keeps .out-of-range's color override.
+  background-image: linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+  background-size: 100% calc(100% / 24);
 
   &.out-of-range {
     opacity: 0.45;
@@ -145,7 +178,6 @@
 .block-segment {
   position: absolute;
   // left + width come from the inline style (lane layout); .draft sets its own.
-  min-height: 0.75rem;
   border-radius: 4px;
   padding: 0.2rem 0.4rem;
   font-size: 0.75rem;
@@ -171,6 +203,28 @@
     font-size: 0.68rem;
     opacity: 0.9;
     white-space: nowrap;
+  }
+
+  // Short blocks (< 45 min) can't fit two lines: tighten and drop the time.
+  &.compact {
+    padding-block: 0.05rem;
+    line-height: 1.1;
+
+    .block-time {
+      display: none;
+    }
+  }
+
+  // Hover-from-panel highlight: emphasise matches, fade the rest.
+  &.highlighted {
+    outline: 2px solid var(--ink);
+    outline-offset: -1px;
+    z-index: 1;
+    box-shadow: 0 2px 6px rgb(20 24 28 / 30%);
+  }
+
+  &.dimmed {
+    opacity: 0.35;
   }
 
   &.draft {
