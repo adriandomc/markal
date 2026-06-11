@@ -164,11 +164,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hour-gutter, .day-column { height: calc(24 * var(--hour-height)); }
 .hour-gutter { display: grid; grid-template-rows: repeat(24, 1fr); border-right: 1px solid var(--border); }
 .hour-gutter .hour-label { font-size: 0.7rem; color: var(--muted); text-align: right; padding-right: 0.5rem; transform: translateY(-0.5em); }
-.day-column { position: relative; border-left: 1px solid var(--border); background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--hour-height) - 1px), var(--border) calc(var(--hour-height) - 1px), var(--border) var(--hour-height)); }
+.day-column { position: relative; border-left: 1px solid var(--border); background-image: linear-gradient(to bottom, var(--border) 1px, transparent 1px); background-size: 100% calc(100% / 24); }
 .day-column.out-of-range { opacity: 0.45; background-color: var(--surface-muted); }
-.block-segment { position: absolute; min-height: 0.75rem; border-radius: 4px; padding: 0.2rem 0.4rem; font-size: 0.75rem; line-height: 1.2; overflow: hidden; box-shadow: 0 1px 2px rgb(20 24 28 / 18%); }
+.block-segment { position: absolute; border-radius: 4px; padding: 0.2rem 0.4rem; font-size: 0.75rem; line-height: 1.2; overflow: hidden; box-shadow: 0 1px 2px rgb(20 24 28 / 18%); }
 .block-segment .block-label { display: block; font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .block-segment .block-time { display: block; font-size: 0.68rem; opacity: 0.9; white-space: nowrap; }
+.block-segment.compact { padding-block: 0.05rem; line-height: 1.1; }
+.block-segment.compact .block-time { display: none; }
 
 /* ---- legends / activities lists ---- */
 .lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem; margin-top: 1.25rem; }
@@ -282,8 +284,10 @@ const EXPORT_RUNTIME = `
     var act = activityById(block.activityId); if (!act) return '';
     var top = (block.startMinutes / MPD) * 100, height = ((block.endMinutes - block.startMinutes) / MPD) * 100;
     var w = 100 / laneCount, left = lane * w;
-    return '<div class="block-segment" style="top:' + top + '%;height:' + height + '%;left:calc(' + left + '% + 2px);width:calc(' + w + '% - 4px);background:' + esc(act.fillColor) + ';color:' + textColor([act.fillColor]) + '">' +
-      '<span class="block-label">' + esc(act.label) + '</span><span class="block-time">' + fmtMin(block.startMinutes) + ' &#8211; ' + fmtMin(block.endMinutes) + '</span></div>';
+    var compact = (block.endMinutes - block.startMinutes) < 45;
+    var time = compact ? '' : ('<span class="block-time">' + fmtMin(block.startMinutes) + ' &#8211; ' + fmtMin(block.endMinutes) + '</span>');
+    return '<div class="block-segment' + (compact ? ' compact' : '') + '" style="top:' + top + '%;height:' + height + '%;left:calc(' + left + '% + 2px);width:calc(' + w + '% - 4px);background:' + esc(act.fillColor) + ';color:' + textColor([act.fillColor]) + '">' +
+      '<span class="block-label">' + esc(act.label) + '</span>' + time + '</div>';
   }
   function renderWeek() {
     var dates = []; for (var i = 0; i < 7; i++) dates.push(addDays(state.weekStart, i));
@@ -295,8 +299,12 @@ const EXPORT_RUNTIME = `
       var segs = layout(blocksForDate(d)).map(function (it) { return segment(it.block, d, it.lane, it.laneCount); }).join('');
       return '<div class="day-column' + (inRange ? '' : ' out-of-range') + '">' + segs + '</div>';
     }).join('');
-    var fmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' });
-    var label = fmt.format(parseKey(dates[0])) + ' &#8211; ' + fmt.format(parseKey(dates[6]));
+    var startDate = parseKey(dates[0]), endDate = parseKey(dates[6]);
+    var dm = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' });
+    var dmy = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+    var label = startDate.getFullYear() === endDate.getFullYear()
+      ? (dm.format(startDate) + ' &#8211; ' + dmy.format(endDate))
+      : (dmy.format(startDate) + ' &#8211; ' + dmy.format(endDate));
     return '<div class="grid-shell"><header class="grid-nav">' +
       '<button class="nav-btn" data-nav="prev" aria-label="' + esc(L.prevWeek) + '">' + CHEVRON_L + '</button>' +
       '<button class="today-button" data-nav="today">' + esc(L.today) + '</button>' +
