@@ -1,4 +1,4 @@
-import type { Activity, DateKey, ScheduledBlock } from "../types.ts";
+import type { Activity, DateKey, DateRange, ScheduledBlock } from "../types.ts";
 import { compareDateKeys, enumerateDays } from "./dates";
 
 export const SNAP_MINUTES = 15;
@@ -61,14 +61,39 @@ export function datesWithBlocks(
   return dates;
 }
 
-export function cleanBlocks(
+/**
+ * Drop activities no block references. With the 1:1 activity↔block model an
+ * activity outlives its block only transiently; call this right after deleting
+ * a block — never on load/sync, where a peer's block may not have arrived yet.
+ */
+export function pruneOrphanActivities(
+  activities: Activity[],
+  blocks: Record<string, ScheduledBlock>,
+): Activity[] {
+  const used = new Set(Object.values(blocks).map((block) => block.activityId));
+  return activities.filter((activity) => used.has(activity.id));
+}
+
+/**
+ * Activities referenced by blocks intersecting the given range, in the stable
+ * order of the activities array. A multi-day block contributes its activity
+ * once (dedupe by id), so the week panel lists each activity a single time.
+ */
+export function activitiesForRange(
   blocks: Record<string, ScheduledBlock>,
   activities: Activity[],
-): Record<string, ScheduledBlock> {
-  const validIds = new Set(activities.map((activity) => activity.id));
-  return Object.fromEntries(
-    Object.entries(blocks).filter(([, block]) => validIds.has(block.activityId)),
-  );
+  range: DateRange,
+): Activity[] {
+  const used = new Set<string>();
+  for (const block of Object.values(blocks)) {
+    if (
+      compareDateKeys(block.startDate, range.end) <= 0 &&
+      compareDateKeys(range.start, block.endDate) <= 0
+    ) {
+      used.add(block.activityId);
+    }
+  }
+  return activities.filter((activity) => used.has(activity.id));
 }
 
 export interface LaidOutBlock {

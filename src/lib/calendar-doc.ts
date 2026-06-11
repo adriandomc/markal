@@ -1,4 +1,4 @@
-import type { CalendarDocument, CalendarSettings, LegendItem, Activity } from "../types.ts";
+import type { CalendarDocument, CalendarSettings, LegendItem } from "../types.ts";
 import { todayKey, yearRangeFor } from "./dates.ts";
 import { DEFAULT_MAX_MARKS_PER_DAY } from "./marks.ts";
 
@@ -7,10 +7,6 @@ const DEFAULT_LEGENDS: Array<Omit<LegendItem, "id">> = [
     label: "",
     fillColor: "#e5e7df",
   }
-];
-
-const DEFAULT_ACTIVITIES: Array<Omit<Activity, "id">> = [
-  { label: "", fillColor: "#a2c8f3" },
 ];
 
 export const DEFAULT_SETTINGS: CalendarSettings = {
@@ -43,10 +39,8 @@ export function createCalendarDocument(title?: string): CalendarDocument {
       id: createId("legend"),
     })),
     marks: {},
-    activities: DEFAULT_ACTIVITIES.map((activity) => ({
-      ...activity,
-      id: createId("activity"),
-    })),
+    // No seed: activities are created 1:1 with blocks (named via the editor).
+    activities: [],
     blocks: {},
     settings: { ...DEFAULT_SETTINGS },
   };

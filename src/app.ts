@@ -13,7 +13,7 @@ import "./components/markal-date-range-control.ts";
 import "./components/markal-legend-panel.ts";
 import "./components/markal-mode-switch.ts";
 import "./components/markal-time-grid.ts";
-import "./components/markal-activity-panel.ts";
+import "./components/markal-week-activities.ts";
 import "./components/markal-block-editor.ts";
 import "./components/markal-settings-modal.ts";
 import "./components/markal-info-modal.ts";
@@ -22,7 +22,7 @@ import "./components/markal-calendarios-modal.ts";
 import "./components/markal-peers-modal.ts";
 import type { DayMarkDetail } from "./components/markal-calendar-board.ts";
 import type { LegendChangeDetail } from "./components/markal-legend-panel.ts";
-import type { ActivityChangeDetail } from "./components/markal-activity-panel.ts";
+import type { BlockActivityChangeDetail } from "./components/markal-block-editor.ts";
 import type { BlockUpdateDetail } from "./components/markal-time-grid.ts";
 import type { ExportFormat } from "./components/markal-export-modal.ts";
 import type { CalendarRenamePayload } from "./components/markal-calendarios-modal.ts";
@@ -32,6 +32,7 @@ import type {
   CalendarCollection,
   CalendarDocument,
   CalendarSettings,
+  DateKey,
   DateRange,
   LegendItem,
   ScheduledBlock,
@@ -41,8 +42,19 @@ import {
   createId,
   duplicateCalendarDocument,
 } from "./lib/calendar-doc.ts";
-import { normalizeRange, parseDateKey } from "./lib/dates.ts";
-import { cleanBlocks, clampBlockTimes } from "./lib/blocks.ts";
+import {
+  addDays,
+  compareDateKeys,
+  normalizeRange,
+  parseDateKey,
+  startOfWeek,
+  todayKey,
+} from "./lib/dates.ts";
+import {
+  activitiesForRange,
+  clampBlockTimes,
+  pruneOrphanActivities,
+} from "./lib/blocks.ts";
 import { buildStandaloneHtml } from "./lib/html-export.ts";
 import { weekdayNarrowLabels } from "./lib/i18n-labels.ts";
 import { iconStyles } from "./lib/icon-styles.ts";
@@ -85,6 +97,7 @@ import {
 } from "./lib/sync/webrtc.ts";
 import {
   getPreferences,
+  setLastTouchedDate,
   setPreferences,
   subscribeToPreferences,
 } from "./lib/preferences.ts";
@@ -109,7 +122,8 @@ export class MarkalApp extends LitElement {
     collection: { state: true },
     selectedLegendId: { state: true },
     boardMode: { state: true },
-    selectedActivityId: { state: true },
+    weekStart: { state: true },
+    highlightedActivityId: { state: true },
     editingBlockId: { state: true },
     exportMessage: { state: true },
     isMobile: { state: true },
@@ -141,7 +155,10 @@ export class MarkalApp extends LitElement {
   // UI-only state: NOT persisted to CalendarSettings (which syncs via Y.Doc),
   // so toggling the board mode never changes the view for collaborators.
   boardMode: BoardMode = "marks";
-  selectedActivityId = "";
+  // Visible week (owned here, not by the grid) + the last-touched-date tracking
+  // that seeds it. The activity highlighted from the week panel / dock.
+  weekStart: DateKey = startOfWeek(todayKey());
+  highlightedActivityId = "";
   editingBlockId: string | null = null;
   exportMessage = "";
   isMobile: boolean = this.matchesMobile();
@@ -175,6 +192,7 @@ export class MarkalApp extends LitElement {
   private unsubscribeAwareness: (() => void) | null = null;
   private unsubscribePreferences: (() => void) | null = null;
   private userNameDebounce: ReturnType<typeof setTimeout> | null = null;
+  private highlightTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     super();
@@ -247,19 +265,15 @@ export class MarkalApp extends LitElement {
       this.collection = collection;
       this.selectedLegendId =
         getSelectedDocument(collection).legends[0]?.id ?? "";
-      this.selectedActivityId =
-        getSelectedDocument(collection).activities[0]?.id ?? "";
+      this.weekStart = this.initialWeekStartFor(
+        getSelectedDocument(collection),
+      );
       this.unsubscribeCollection = subscribeToCollectionChanges(
         (remoteCollection) => {
           this.collection = remoteCollection;
           const selected = getSelectedDocument(remoteCollection);
           if (!selected.legends.find((l) => l.id === this.selectedLegendId)) {
             this.selectedLegendId = selected.legends[0]?.id ?? "";
-          }
-          if (
-            !selected.activities.find((a) => a.id === this.selectedActivityId)
-          ) {
-            this.selectedActivityId = selected.activities[0]?.id ?? "";
           }
         },
       );
@@ -339,6 +353,10 @@ export class MarkalApp extends LitElement {
       clearTimeout(this.userNameDebounce);
       this.userNameDebounce = null;
     }
+    if (this.highlightTimer) {
+      clearTimeout(this.highlightTimer);
+      this.highlightTimer = null;
+    }
   }
 
   private openCalendarios = (): void => {
@@ -374,8 +392,31 @@ export class MarkalApp extends LitElement {
     this.restoreFocus();
   };
 
-  private selectActivityFromChip = (id: string): void => {
-    this.selectedActivityId = id;
+  // Desktop hover: follow the panel directly ("" on mouse-leave).
+  private setHighlightedActivity = (
+    event: CustomEvent<string | null>,
+  ): void => {
+    if (this.highlightTimer) {
+      clearTimeout(this.highlightTimer);
+      this.highlightTimer = null;
+    }
+    this.highlightedActivityId = event.detail ?? "";
+  };
+
+  // Touch: a tap highlights the activity's blocks for a couple of seconds.
+  private flashHighlight(id: string): void {
+    this.highlightedActivityId = id;
+    if (this.highlightTimer) clearTimeout(this.highlightTimer);
+    this.highlightTimer = setTimeout(() => {
+      this.highlightedActivityId = "";
+      this.highlightTimer = null;
+    }, 2000);
+  }
+
+  private flashHighlightedActivity = (
+    event: CustomEvent<string | null>,
+  ): void => {
+    if (event.detail) this.flashHighlight(event.detail);
   };
 
   private openInfo = (): void => {
@@ -563,9 +604,6 @@ export class MarkalApp extends LitElement {
     if (!selected.legends.find((l) => l.id === this.selectedLegendId)) {
       this.selectedLegendId = selected.legends[0]?.id ?? "";
     }
-    if (!selected.activities.find((a) => a.id === this.selectedActivityId)) {
-      this.selectedActivityId = selected.activities[0]?.id ?? "";
-    }
   }
 
   protected updated(changed: Map<string, unknown>): void {
@@ -715,9 +753,8 @@ export class MarkalApp extends LitElement {
           <section class="range-row">
             <markal-mode-switch
               .mode="${this.boardMode}"
-              @mode-change="${(event: CustomEvent<BoardMode>) => {
-                this.boardMode = event.detail;
-              }}"
+              @mode-change="${(event: CustomEvent<BoardMode>) =>
+                this.changeBoardMode(event.detail)}"
             ></markal-mode-switch>
             <markal-date-range-control
               .range="${document.dateRange}"
@@ -730,7 +767,9 @@ export class MarkalApp extends LitElement {
               ? html`
                 <markal-time-grid
                   .document="${document}"
-                  .selectedActivityId="${this.selectedActivityId}"
+                  .weekStart="${this.weekStart}"
+                  .highlightedActivityId="${this.highlightedActivityId}"
+                  @week-change="${this.changeWeek}"
                   @block-create="${this.createBlock}"
                   @block-update="${this.updateBlock}"
                   @block-edit="${this.openBlockEditor}"
@@ -749,7 +788,7 @@ export class MarkalApp extends LitElement {
       </main>
       ${this.isMobile
         ? (this.boardMode === "schedule"
-          ? this.renderActivityDock(document.activities)
+          ? this.renderActivityDock(this.weekActivities)
           : this.renderLegendDock(document.legends))
         : nothing}
       ${this.renderSettingsModal()}
@@ -764,15 +803,10 @@ export class MarkalApp extends LitElement {
   private renderSidePanel(document: CalendarDocument) {
     if (this.boardMode === "schedule") {
       return html`
-        <markal-activity-panel
-          .activities="${document.activities}"
-          .selectedActivityId="${this.selectedActivityId}"
-          @activity-select="${this.selectActivity}"
-          @activity-change="${this.changeActivity}"
-          @activity-add="${this.addActivity}"
-          @activity-remove="${this.removeActivity}"
-          @activity-reorder="${this.reorderActivities}"
-        ></markal-activity-panel>
+        <markal-week-activities
+          .activities="${this.weekActivities}"
+          @activity-hover="${this.setHighlightedActivity}"
+        ></markal-week-activities>
       `;
     }
     return html`
@@ -792,13 +826,19 @@ export class MarkalApp extends LitElement {
     const block = this.editingBlockId
       ? this.selectedDocument.blocks[this.editingBlockId] ?? null
       : null;
+    const activity = block
+      ? this.selectedDocument.activities.find((a) =>
+        a.id === block.activityId
+      ) ?? null
+      : null;
     return html`
       <markal-block-editor
         ?open="${block !== null}"
         .block="${block}"
-        .activities="${this.selectedDocument.activities}"
+        .activity="${activity}"
         @markal-close="${this.closeBlockEditor}"
         @block-update="${this.updateBlock}"
+        @block-activity-change="${this.changeBlockActivity}"
         @block-delete="${this.removeBlock}"
       ></markal-block-editor>
     `;
@@ -946,8 +986,9 @@ export class MarkalApp extends LitElement {
     `;
   }
 
-  // Mirror of renderLegendDock for schedule mode; reuses the same bottom-sheet
-  // CSS classes (legend-dock/peek/chip/sheet) with activity data.
+  // Read-only counterpart of renderLegendDock for schedule mode: reuses the
+  // bottom-sheet CSS (legend-dock/peek/chip/sheet) but tapping an activity only
+  // highlights its blocks (~2s) — there is no creation/editing here.
   private renderActivityDock(activities: Activity[]) {
     return html`
       <div
@@ -959,42 +1000,45 @@ export class MarkalApp extends LitElement {
         <div
           class="${`legend-peek${this.activitySheetOpen ? " is-hidden" : ""}`}"
           role="toolbar"
-          aria-label="${msg("Selector de actividad")}"
+          aria-label="${msg("Actividades de la semana")}"
           aria-hidden="${String(this.activitySheetOpen)}"
           ?inert="${this.activitySheetOpen}"
         >
           <div class="legend-chips">
-            ${activities.map((activity) =>
-              html`
-                <button
-                  class="${`legend-chip${
-                    activity.id === this.selectedActivityId ? " selected" : ""
-                  }`}"
-                  type="button"
-                  style="${`--chip-color: ${activity.fillColor}`}"
-                  aria-label="${activity.label || msg("Actividad")}"
-                  aria-pressed="${String(
-                    activity.id === this.selectedActivityId,
-                  )}"
-                  @click="${() => this.selectActivityFromChip(activity.id)}"
-                >
-                </button>
-              `
-            )}
+            ${activities.length === 0
+              ? html`<span class="dock-empty">${
+                msg("Sin actividades esta semana")
+              }</span>`
+              : activities.map((activity) =>
+                html`
+                  <button
+                    class="${`legend-chip${
+                      activity.id === this.highlightedActivityId
+                        ? " selected"
+                        : ""
+                    }`}"
+                    type="button"
+                    style="${`--chip-color: ${activity.fillColor}`}"
+                    aria-label="${activity.label || msg("Actividad")}"
+                    @click="${() => this.flashHighlight(activity.id)}"
+                  >
+                  </button>
+                `
+              )}
           </div>
           <button
             class="legend-edit"
             type="button"
-            aria-label="${msg("Editar actividades")}"
+            aria-label="${msg("Actividades de la semana")}"
             @click="${this.openActivitySheet}"
           >
-            <i class="ph ph-pencil-simple"></i>
+            <i class="ph ph-list"></i>
           </button>
         </div>
         <div
           class="${`legend-sheet${this.activitySheetOpen ? " open" : ""}`}"
           role="dialog"
-          aria-label="${msg("Editor de actividades")}"
+          aria-label="${msg("Actividades de la semana")}"
           aria-modal="${String(this.activitySheetOpen)}"
           aria-hidden="${String(!this.activitySheetOpen)}"
           tabindex="-1"
@@ -1009,16 +1053,11 @@ export class MarkalApp extends LitElement {
             ></markal-icon-button>
           </header>
           <div class="legend-sheet-body">
-            <markal-activity-panel
+            <markal-week-activities
               embedded
               .activities="${activities}"
-              .selectedActivityId="${this.selectedActivityId}"
-              @activity-select="${this.selectActivity}"
-              @activity-change="${this.changeActivity}"
-              @activity-add="${this.addActivity}"
-              @activity-remove="${this.removeActivity}"
-              @activity-reorder="${this.reorderActivities}"
-            ></markal-activity-panel>
+              @activity-hover="${this.flashHighlightedActivity}"
+            ></markal-week-activities>
           </div>
         </div>
       </div>
@@ -1127,7 +1166,8 @@ export class MarkalApp extends LitElement {
       document.id === selectedId
     );
     this.selectedLegendId = selected?.legends[0]?.id ?? "";
-    this.selectedActivityId = selected?.activities[0]?.id ?? "";
+    if (selected) this.weekStart = this.initialWeekStartFor(selected);
+    this.highlightedActivityId = "";
     this.persist({ ...collection, selectedId });
   }
 
@@ -1152,7 +1192,7 @@ export class MarkalApp extends LitElement {
       msg(str`Calendario ${nextNumber}`),
     );
     this.selectedLegendId = document.legends[0]?.id ?? "";
-    this.selectedActivityId = document.activities[0]?.id ?? "";
+    this.weekStart = this.initialWeekStartFor(document);
     this.persist({
       ...collection,
       selectedId: document.id,
@@ -1173,7 +1213,7 @@ export class MarkalApp extends LitElement {
       msg(str`${source.title} copia`),
     );
     this.selectedLegendId = document.legends[0]?.id ?? "";
-    this.selectedActivityId = document.activities[0]?.id ?? "";
+    this.weekStart = this.initialWeekStartFor(document);
     this.persist({
       ...collection,
       selectedId: document.id,
@@ -1209,7 +1249,8 @@ export class MarkalApp extends LitElement {
     const selected = remaining.find((document) => document.id === selectedId) ??
       remaining[0];
     this.selectedLegendId = selected.legends[0]?.id ?? "";
-    this.selectedActivityId = selected.activities[0]?.id ?? "";
+    this.weekStart = this.initialWeekStartFor(selected);
+    this.highlightedActivityId = "";
     this.persist({
       ...collection,
       selectedId,
@@ -1328,87 +1369,64 @@ export class MarkalApp extends LitElement {
     }));
   };
 
-  private selectActivity = (event: CustomEvent<string>): void => {
-    this.selectedActivityId = event.detail;
-  };
-
-  private changeActivity = (event: CustomEvent<ActivityChangeDetail>): void => {
-    const { id, patch } = event.detail;
-    this.updateSelectedDocument((document) => ({
-      ...document,
-      activities: document.activities.map((
-        activity,
-      ) => (activity.id === id ? { ...activity, ...patch } : activity)),
-    }));
-  };
-
-  private addActivity = (): void => {
-    const activity: Activity = {
-      id: createId("activity"),
-      label: "",
-      fillColor: "#a2c8f3",
-    };
-    this.selectedActivityId = activity.id;
-    this.updateSelectedDocument((document) => ({
-      ...document,
-      activities: [...document.activities, activity],
-    }));
-  };
-
-  private reorderActivities = (event: CustomEvent<string[]>): void => {
-    const orderedIds = event.detail;
-    this.updateSelectedDocument((document) => {
-      const byId = new Map(
-        document.activities.map((activity) => [activity.id, activity]),
-      );
-      const reordered: Activity[] = [];
-      for (const id of orderedIds) {
-        const activity = byId.get(id);
-        if (activity) {
-          reordered.push(activity);
-          byId.delete(id);
-        }
-      }
-      for (const activity of byId.values()) {
-        reordered.push(activity);
-      }
-      if (reordered.length !== document.activities.length) {
-        return document;
-      }
-      return { ...document, activities: reordered };
+  private get weekActivities(): Activity[] {
+    const doc = this.selectedDocument;
+    return activitiesForRange(doc.blocks, doc.activities, {
+      start: this.weekStart,
+      end: addDays(this.weekStart, 6),
     });
-  };
+  }
 
-  private removeActivity = (event: CustomEvent<string>): void => {
-    const id = event.detail;
-    const document = this.selectedDocument;
-    // Unlike legends (minimum 1), zero activities is valid: it just disables
-    // creating new blocks.
-    const activities = document.activities.filter((activity) =>
-      activity.id !== id
-    );
-    if (this.selectedActivityId === id) {
-      this.selectedActivityId = activities[0]?.id ?? "";
+  /** Week to open on: the last day the user touched here, clamped to range. */
+  private initialWeekStartFor(doc: CalendarDocument): DateKey {
+    const raw = getPreferences().lastTouchedDates[doc.id] ?? todayKey();
+    const clamped = compareDateKeys(raw, doc.dateRange.start) < 0
+      ? doc.dateRange.start
+      : compareDateKeys(raw, doc.dateRange.end) > 0
+      ? doc.dateRange.end
+      : raw;
+    return startOfWeek(clamped);
+  }
+
+  private changeBoardMode(mode: BoardMode): void {
+    this.boardMode = mode;
+    this.highlightedActivityId = "";
+    if (mode === "schedule") {
+      this.weekStart = this.initialWeekStartFor(this.selectedDocument);
     }
-    this.updateSelectedDocument((current) => ({
-      ...current,
-      activities,
-      blocks: cleanBlocks(current.blocks, activities), // cascade
-    }));
+  }
+
+  private changeWeek = (event: CustomEvent<DateKey>): void => {
+    this.weekStart = startOfWeek(event.detail);
+    this.highlightedActivityId = "";
   };
 
   private createBlock = (
     event: CustomEvent<Omit<ScheduledBlock, "id">>,
   ): void => {
-    const block: ScheduledBlock = { ...event.detail, id: createId("block") };
+    // 1:1 model: each block gets its own fresh activity, named via the editor.
+    const activity: Activity = {
+      id: createId("activity"),
+      label: "",
+      fillColor: "#a2c8f3",
+    };
+    const block: ScheduledBlock = {
+      ...event.detail,
+      activityId: activity.id,
+      id: createId("block"),
+    };
     this.updateSelectedDocument((document) => ({
       ...document,
+      activities: [...document.activities, activity],
       blocks: { ...document.blocks, [block.id]: block },
     }));
+    this.editingBlockId = block.id; // open the editor to name it
+    setLastTouchedDate(this.selectedDocument.id, block.startDate);
   };
 
   private updateBlock = (event: CustomEvent<BlockUpdateDetail>): void => {
     const { id, patch } = event.detail;
+    let touched: DateKey | null = null;
     this.updateSelectedDocument((document) => {
       const current = document.blocks[id];
       if (!current) return document;
@@ -1419,6 +1437,7 @@ export class MarkalApp extends LitElement {
         end: merged.endDate,
       });
       const times = clampBlockTimes(merged.startMinutes, merged.endMinutes);
+      touched = range.start;
       return {
         ...document,
         blocks: {
@@ -1432,6 +1451,48 @@ export class MarkalApp extends LitElement {
         },
       };
     });
+    if (touched) setLastTouchedDate(this.selectedDocument.id, touched);
+  };
+
+  // Edit the block's own activity. If the activity is shared by other blocks
+  // (legacy data from the pre-1:1 flow), clone it for this block (copy-on-write)
+  // so the others keep the original.
+  private changeBlockActivity = (
+    event: CustomEvent<BlockActivityChangeDetail>,
+  ): void => {
+    const { blockId, patch } = event.detail;
+    this.updateSelectedDocument((document) => {
+      const block = document.blocks[blockId];
+      if (!block) return document;
+      const sharers = Object.values(document.blocks).filter((b) =>
+        b.activityId === block.activityId
+      ).length;
+      if (sharers <= 1) {
+        return {
+          ...document,
+          activities: document.activities.map((a) =>
+            a.id === block.activityId ? { ...a, ...patch } : a
+          ),
+        };
+      }
+      const original = document.activities.find((a) =>
+        a.id === block.activityId
+      );
+      const clone: Activity = {
+        label: original?.label ?? "",
+        fillColor: original?.fillColor ?? "#a2c8f3",
+        ...patch,
+        id: createId("activity"),
+      };
+      return {
+        ...document,
+        activities: [...document.activities, clone],
+        blocks: {
+          ...document.blocks,
+          [blockId]: { ...block, activityId: clone.id },
+        },
+      };
+    });
   };
 
   private removeBlock = (event: CustomEvent<string>): void => {
@@ -1439,7 +1500,12 @@ export class MarkalApp extends LitElement {
     this.updateSelectedDocument((document) => {
       const blocks = { ...document.blocks };
       delete blocks[id];
-      return { ...document, blocks };
+      // Drop the now-orphaned activity (1:1 model). Only on explicit delete.
+      return {
+        ...document,
+        blocks,
+        activities: pruneOrphanActivities(document.activities, blocks),
+      };
     });
   };
 
@@ -1482,6 +1548,9 @@ export class MarkalApp extends LitElement {
         marks: cleanMarks(marks),
       };
     });
+
+    const last = dates[dates.length - 1];
+    if (last) setLastTouchedDate(this.selectedDocument.id, last);
   };
 
   private exportCalendar = async (format: ExportFormat): Promise<void> => {

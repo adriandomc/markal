@@ -60,15 +60,17 @@ const DEFAULT_BLOCK_MINUTES = 60;
 export class MarkalTimeGrid extends LitElement {
   static properties = {
     document: { attribute: false },
-    selectedActivityId: { type: String },
-    weekStart: { state: true },
+    weekStart: { attribute: false },
+    highlightedActivityId: { type: String },
     dragging: { type: Boolean, reflect: true },
     _draft: { state: true },
   };
 
   document!: CalendarDocument;
-  selectedActivityId = "";
+  // Controlled by the parent (app.ts owns week navigation + the last-touched
+  // tracking); the grid emits `week-change` instead of mutating it.
   weekStart: DateKey = startOfWeek(todayKey());
+  highlightedActivityId = "";
   dragging = false;
 
   private _draft: ScheduledBlock | null = null;
@@ -155,13 +157,22 @@ export class MarkalTimeGrid extends LitElement {
 
   private renderNav(dates: DateKey[]) {
     const locale = getLocale();
-    const fmt = new Intl.DateTimeFormat(locale, {
+    const start = parseDateKey(dates[0]);
+    const end = parseDateKey(dates[6]);
+    const dayMonth = new Intl.DateTimeFormat(locale, {
       day: "numeric",
       month: "short",
     });
-    const label = `${fmt.format(parseDateKey(dates[0]))} – ${
-      fmt.format(parseDateKey(dates[6]))
-    }`;
+    const dayMonthYear = new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    // Cross-year weeks show the year on both ends; otherwise only at the end.
+    const label = start.getFullYear() === end.getFullYear()
+      ? `${dayMonth.format(start)} – ${dayMonthYear.format(end)}`
+      : `${dayMonthYear.format(start)} – ${dayMonthYear.format(end)}`;
+    const range = this.document.dateRange;
     return html`
       <header class="grid-nav">
         <markal-icon-button
@@ -181,7 +192,23 @@ export class MarkalTimeGrid extends LitElement {
           label="${msg("Semana siguiente")}"
           @click="${this.goToNextWeek}"
         ></markal-icon-button>
-        <span class="week-label">${label}</span>
+        <button
+          class="week-label"
+          type="button"
+          title="${msg("Elegir semana")}"
+          @click="${this.openWeekPicker}"
+        >
+          <span>${label}</span>
+          <input
+            class="week-picker"
+            type="date"
+            aria-label="${msg("Elegir semana")}"
+            .value="${this.weekStart}"
+            min="${range.start}"
+            max="${range.end}"
+            @change="${this.handleWeekPicked}"
+          />
+        </button>
       </header>
     `;
   }
@@ -220,12 +247,19 @@ export class MarkalTimeGrid extends LitElement {
     const top = (block.startMinutes / MINUTES_PER_DAY) * 100;
     const height = ((block.endMinutes - block.startMinutes) / MINUTES_PER_DAY) *
       100;
+    const compact = block.endMinutes - block.startMinutes < 45;
+    const highlightActive = this.highlightedActivityId !== "";
+    const highlighted = highlightActive &&
+      block.activityId === this.highlightedActivityId;
+    const dimmed = highlightActive && !highlighted;
     const widthPct = 100 / laneCount;
     const leftPct = lane * widthPct;
     const locale = getLocale();
     return html`
       <div
-        class="block-segment"
+        class="block-segment ${compact ? "compact" : ""} ${highlighted
+          ? "highlighted"
+          : ""} ${dimmed ? "dimmed" : ""}"
         data-block-id="${block.id}"
         data-date="${date}"
         style="top: ${top}%; height: ${height}%; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); background: ${activity
@@ -260,10 +294,11 @@ export class MarkalTimeGrid extends LitElement {
     const top = (draft.startMinutes / MINUTES_PER_DAY) * 100;
     const height = ((draft.endMinutes - draft.startMinutes) / MINUTES_PER_DAY) *
       100;
+    const compact = draft.endMinutes - draft.startMinutes < 45;
     const locale = getLocale();
     return html`
       <div
-        class="block-segment draft"
+        class="block-segment draft ${compact ? "compact" : ""}"
         style="top: ${top}%; height: ${height}%; background: ${fill}; ${pickTextStyle(
           [fill],
         )}"
@@ -294,7 +329,6 @@ export class MarkalTimeGrid extends LitElement {
   // ===== Gestures =====
 
   private handleColumnPointerDown(event: PointerEvent, date: DateKey): void {
-    if (!this.selectedActivityId) return; // no activity → nothing to create
     if (event.pointerType === "mouse" && event.button !== 0) return;
     if (this.gesture) return;
     if ((event.target as Element).closest(".block-segment")) return;
@@ -392,7 +426,7 @@ export class MarkalTimeGrid extends LitElement {
       const times = clampBlockTimes(gesture.anchorMinutes, gesture.anchorMinutes);
       this._draft = {
         id: "draft",
-        activityId: this.selectedActivityId,
+        activityId: "",
         startDate: gesture.anchorDate,
         endDate: gesture.anchorDate,
         ...times,
@@ -440,7 +474,7 @@ export class MarkalTimeGrid extends LitElement {
       const times = clampBlockTimes(gesture.anchorMinutes, minutes);
       this._draft = {
         id: "draft",
-        activityId: this.selectedActivityId,
+        activityId: "",
         startDate: gesture.anchorDate,
         endDate: gesture.anchorDate,
         ...times,
@@ -531,7 +565,7 @@ export class MarkalTimeGrid extends LitElement {
           Math.min(start + DEFAULT_BLOCK_MINUTES, MINUTES_PER_DAY),
         );
         this.dispatchCreate({
-          activityId: this.selectedActivityId,
+          activityId: "",
           startDate: gesture.anchorDate,
           endDate: gesture.anchorDate,
           ...times,
@@ -596,16 +630,47 @@ export class MarkalTimeGrid extends LitElement {
     );
   }
 
+  private dispatchWeekChange(anchorDate: DateKey): void {
+    this.dispatchEvent(
+      new CustomEvent<DateKey>("week-change", {
+        detail: anchorDate,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
   private goToPreviousWeek = (): void => {
-    this.weekStart = addDays(this.weekStart, -7);
+    this.dispatchWeekChange(addDays(this.weekStart, -7));
   };
 
   private goToNextWeek = (): void => {
-    this.weekStart = addDays(this.weekStart, 7);
+    this.dispatchWeekChange(addDays(this.weekStart, 7));
   };
 
   private goToToday = (): void => {
-    this.weekStart = startOfWeek(todayKey());
+    this.dispatchWeekChange(todayKey());
+  };
+
+  private openWeekPicker = (event: Event): void => {
+    const input = (event.currentTarget as HTMLElement).querySelector(
+      "input[type=date]",
+    ) as HTMLInputElement | null;
+    if (!input) return;
+    // Progressive enhancement: showPicker() where supported (Chrome 99+,
+    // Safari 16+, FF 101+); the overlaid input is the universal fallback.
+    if ("showPicker" in input) {
+      try {
+        input.showPicker();
+      } catch {
+        // user-gesture / cross-origin restrictions — overlay still works
+      }
+    }
+  };
+
+  private handleWeekPicked = (event: Event): void => {
+    const value = (event.target as HTMLInputElement).value;
+    if (value) this.dispatchWeekChange(value);
   };
 }
 
