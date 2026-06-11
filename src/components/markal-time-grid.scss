@@ -1,0 +1,240 @@
+@use "../styles/mixins" as *;
+
+@include host-block;
+
+:host {
+  --hour-height: 3rem;
+  --gutter-width: 3.5rem;
+}
+
+.grid-shell {
+  @include panel;
+  display: flex;
+  flex-direction: column;
+  min-height: 32.5rem;
+}
+
+.grid-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+
+  .today-button {
+    @include bordered-control(4px);
+    cursor: pointer;
+    padding: 0.375rem 0.75rem;
+    font-weight: 750;
+    @include lift-hover;
+  }
+
+  .week-label {
+    margin-left: auto;
+    font-size: 0.95rem;
+    font-weight: 750;
+    color: var(--ink);
+  }
+}
+
+.grid-scroll {
+  overflow-y: auto;
+  max-height: 70vh;
+  // Vertical finger-scroll keeps working until a drag engages, at which point
+  // the [dragging] host attribute switches it off (mirrors the month board).
+  touch-action: pan-y;
+}
+
+:host([dragging]) .grid-scroll {
+  touch-action: none;
+}
+
+.grid-header,
+.grid-body {
+  display: grid;
+  grid-template-columns: var(--gutter-width) repeat(7, 1fr);
+}
+
+.grid-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.gutter-spacer {
+  border-right: 1px solid var(--border);
+}
+
+.day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.375rem 0.25rem;
+
+  .weekday {
+    @include uppercase-label(0.7rem);
+  }
+
+  .day-number {
+    font-size: 1rem;
+    font-weight: 750;
+  }
+
+  &.today {
+    .day-number {
+      display: grid;
+      place-items: center;
+      min-width: 1.625rem;
+      height: 1.625rem;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--surface);
+    }
+  }
+}
+
+.hour-gutter,
+.day-column {
+  height: calc(24 * var(--hour-height));
+}
+
+.hour-gutter {
+  display: grid;
+  grid-template-rows: repeat(24, 1fr);
+  border-right: 1px solid var(--border);
+
+  .hour-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: right;
+    padding-right: 0.5rem;
+    transform: translateY(-0.5em); // label centred on the hour line
+  }
+}
+
+.day-column {
+  position: relative;
+  border-left: 1px solid var(--border);
+  // Vertical finger-scroll works until a drag engages (then [dragging] off).
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  // Hour lines without 24 divs: a repeating gradient.
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--hour-height) - 1px),
+    var(--border) calc(var(--hour-height) - 1px),
+    var(--border) var(--hour-height)
+  );
+
+  &.out-of-range {
+    opacity: 0.45;
+    pointer-events: none;
+    background-color: var(--surface-muted);
+  }
+}
+
+:host([dragging]) .day-column {
+  touch-action: none;
+}
+
+.block-segment {
+  position: absolute;
+  // left + width come from the inline style (lane layout); .draft sets its own.
+  min-height: 0.75rem;
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgb(20 24 28 / 18%);
+  // Touch the body to scroll; a tap (no move) opens the editor.
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+
+  .block-label {
+    display: block;
+    font-weight: 750;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .block-time {
+    display: block;
+    font-size: 0.68rem;
+    opacity: 0.9;
+    white-space: nowrap;
+  }
+
+  &.draft {
+    left: 2px;
+    width: calc(100% - 4px);
+    opacity: 0.7;
+    pointer-events: none;
+    outline: 2px dashed rgb(255 255 255 / 70%);
+    outline-offset: -2px;
+  }
+}
+
+.handle {
+  position: absolute;
+  z-index: 2;
+  // Precise grab targets: a touch starting here must never scroll.
+  touch-action: none;
+
+  &.handle-top,
+  &.handle-bottom {
+    left: 0;
+    right: 0;
+    height: 0.6rem;
+    cursor: ns-resize;
+  }
+
+  &.handle-left,
+  &.handle-right {
+    top: 0;
+    bottom: 0;
+    width: 0.6rem;
+    cursor: ew-resize;
+  }
+
+  &.handle-top {
+    top: 0;
+  }
+
+  &.handle-bottom {
+    bottom: 0;
+  }
+
+  &.handle-left {
+    left: 0;
+  }
+
+  &.handle-right {
+    right: 0;
+  }
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  min-height: 22.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 980px) {
+  :host {
+    --hour-height: 2.25rem;
+    --gutter-width: 2.5rem;
+  }
+}

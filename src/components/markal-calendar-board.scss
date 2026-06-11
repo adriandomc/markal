@@ -154,6 +154,23 @@
   font-weight: 700;
 }
 
+.day .block-dot {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.week-day .block-dot {
+  bottom: 5px;
+}
+
 .layers {
   position: absolute;
   inset: 0;
