@@ -13,6 +13,11 @@ export interface DayCell {
   inRange: boolean;
 }
 
+export function startOfWeek(key: DateKey): DateKey {
+  const date = parseDateKey(key);
+  return addDays(key, -date.getDay());
+}
+
 export function todayKey(): DateKey {
   return toDateKey(new Date());
 }
