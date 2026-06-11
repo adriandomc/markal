@@ -66,6 +66,10 @@ export const iconStyles = css`
     content: "\\eb18";
   }
 
+  .ph.ph-file-html::before {
+    content: "\\eb38";
+  }
+
   .ph.ph-gear-six::before {
     content: "\\e272";
   }
