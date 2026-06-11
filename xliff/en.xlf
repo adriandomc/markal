@@ -587,6 +587,18 @@
   <source>Semana siguiente</source>
   <target>Next week</target>
 </trans-unit>
+<trans-unit id="s9367ab0febaa6d88">
+  <source>Solo lectura</source>
+  <target>Read only</target>
+</trans-unit>
+<trans-unit id="sf83cb927a58c92b5">
+  <source>HTML listo</source>
+  <target>HTML ready</target>
+</trans-unit>
+<trans-unit id="s8182b41653f1a6ad">
+  <source>El HTML es un archivo interactivo de solo lectura que puedes compartir; incluye el mes y la semana.</source>
+  <target>The HTML is a read-only interactive file you can share; it includes the month and the week.</target>
+</trans-unit>
 </body>
 </file>
 </xliff>
