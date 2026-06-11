@@ -70,3 +70,28 @@ export function cleanBlocks(
     Object.entries(blocks).filter(([, block]) => validIds.has(block.activityId)),
   );
 }
+
+export interface LaidOutBlock {
+  block: ScheduledBlock;
+  lane: number;
+  laneCount: number;
+}
+
+/** Partition a day's blocks into lanes so overlapping ones sit side by side. */
+export function layoutDayBlocks(blocks: ScheduledBlock[]): LaidOutBlock[] {
+  const sorted = [...blocks].sort((a, b) =>
+    a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes
+  );
+  const laneEnds: number[] = []; // end of the last block placed in each lane
+  const placed = sorted.map((block) => {
+    let lane = laneEnds.findIndex((end) => end <= block.startMinutes);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(0);
+    }
+    laneEnds[lane] = block.endMinutes;
+    return { block, lane, laneCount: 0 };
+  });
+  const laneCount = laneEnds.length;
+  return placed.map((item) => ({ ...item, laneCount }));
+}
