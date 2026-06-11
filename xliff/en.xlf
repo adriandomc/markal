@@ -503,6 +503,90 @@
   <source>¿Preguntas o solicitudes relacionadas con privacidad? Escribe a <x id="0" equiv-text="&lt;a href=&quot;mailto:adriandomc@gmail.com&quot;&gt;"/>adriandomc@gmail.com<x id="1" equiv-text="&lt;/a&gt;"/>.</source>
   <target>Privacy-related questions or requests? Write to <x id="0" equiv-text="&lt;a href=&quot;mailto:adriandomc@gmail.com&quot;&gt;"/>adriandomc@gmail.com<x id="1" equiv-text="&lt;/a&gt;"/>.</target>
 </trans-unit>
+<trans-unit id="s321711405af95c68">
+  <source>Selector de actividad</source>
+  <target>Activity selector</target>
+</trans-unit>
+<trans-unit id="s7106bda59116ad85">
+  <source>Editar actividades</source>
+  <target>Edit activities</target>
+</trans-unit>
+<trans-unit id="s429055fe4a41d4a8">
+  <source>Editor de actividades</source>
+  <target>Activity editor</target>
+</trans-unit>
+<trans-unit id="sb05d655116bf9464">
+  <source>Actividades</source>
+  <target>Activities</target>
+</trans-unit>
+<trans-unit id="s30eb42e583916875">
+  <source>Nueva actividad</source>
+  <target>New activity</target>
+</trans-unit>
+<trans-unit id="sa0b21635c8499115">
+  <source>Mover actividad</source>
+  <target>Move activity</target>
+</trans-unit>
+<trans-unit id="s7b1f5c96b95cc95d">
+  <source>Color de la actividad</source>
+  <target>Activity color</target>
+</trans-unit>
+<trans-unit id="s6cd033ac7cc80b79">
+  <source>Texto de actividad</source>
+  <target>Activity label</target>
+</trans-unit>
+<trans-unit id="s0250e1c4efd2be79">
+  <source>Eliminar actividad</source>
+  <target>Delete activity</target>
+</trans-unit>
+<trans-unit id="sa42c4c43e9b716ee">
+  <source>Editar bloque</source>
+  <target>Edit block</target>
+</trans-unit>
+<trans-unit id="s172bfaea0f87a860">
+  <source>Actividad</source>
+  <target>Activity</target>
+</trans-unit>
+<trans-unit id="s3734ea1b4053860f">
+  <source>Hora de inicio</source>
+  <target>Start time</target>
+</trans-unit>
+<trans-unit id="sa63f3174355816f1">
+  <source>Hora de fin</source>
+  <target>End time</target>
+</trans-unit>
+<trans-unit id="s2ab398dc6bf97b60">
+  <source>Desde</source>
+  <target>From</target>
+</trans-unit>
+<trans-unit id="s6d1534cfbb31585c">
+  <source>Hasta</source>
+  <target>To</target>
+</trans-unit>
+<trans-unit id="s8145efb7705338ee">
+  <source>Eliminar bloque</source>
+  <target>Delete block</target>
+</trans-unit>
+<trans-unit id="scd1505712560ee58">
+  <source>Vista de semana</source>
+  <target>Week view</target>
+</trans-unit>
+<trans-unit id="s92df4c5d690a34b2">
+  <source>Vista de mes</source>
+  <target>Month view</target>
+</trans-unit>
+<trans-unit id="s5f80cc8a193fe546">
+  <source>Semana anterior</source>
+  <target>Previous week</target>
+</trans-unit>
+<trans-unit id="s49683919cdaeca83">
+  <source>Hoy</source>
+  <target>Today</target>
+</trans-unit>
+<trans-unit id="s07418aaefbed8805">
+  <source>Semana siguiente</source>
+  <target>Next week</target>
+</trans-unit>
 </body>
 </file>
 </xliff>
