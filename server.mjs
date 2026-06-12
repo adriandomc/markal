@@ -33,10 +33,10 @@ if (cluster.isPrimary) {
 
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com",
+      "script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com https://static.cloudflareinsights.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
-      "connect-src 'self' https://www.googleapis.com wss: stun: turn:",
+      "connect-src 'self' https://www.googleapis.com wss: stun: turn: https://cloudflareinsights.com",
       "font-src 'self' data:",
       "object-src 'none'",
       "base-uri 'self'",
