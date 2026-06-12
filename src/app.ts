@@ -763,9 +763,10 @@ export class MarkalApp extends LitElement {
           </section>
 
           <section class="workspace">
-            ${this.boardMode === "schedule"
+            ${this.boardMode === "schedule" || this.boardMode === "day"
               ? html`
                 <markal-time-grid
+                  .mode="${this.boardMode}"
                   .document="${document}"
                   .weekStart="${this.weekStart}"
                   .highlightedActivityId="${this.highlightedActivityId}"
@@ -773,6 +774,7 @@ export class MarkalApp extends LitElement {
                   @block-create="${this.createBlock}"
                   @block-update="${this.updateBlock}"
                   @block-edit="${this.openBlockEditor}"
+                  @day-focus="${this.handleDayFocus}"
                 ></markal-time-grid>
               `
               : html`
@@ -787,7 +789,7 @@ export class MarkalApp extends LitElement {
         </div>
       </main>
       ${this.isMobile
-        ? (this.boardMode === "schedule"
+        ? (this.boardMode === "schedule" || this.boardMode === "day"
           ? this.renderActivityDock(this.weekActivities)
           : this.renderLegendDock(document.legends))
         : nothing}
@@ -801,7 +803,7 @@ export class MarkalApp extends LitElement {
   }
 
   private renderSidePanel(document: CalendarDocument) {
-    if (this.boardMode === "schedule") {
+    if (this.boardMode === "schedule" || this.boardMode === "day") {
       return html`
         <markal-week-activities
           .activities="${this.weekActivities}"
@@ -809,6 +811,7 @@ export class MarkalApp extends LitElement {
         ></markal-week-activities>
       `;
     }
+
     return html`
       <markal-legend-panel
         .legends="${document.legends}"
@@ -821,6 +824,11 @@ export class MarkalApp extends LitElement {
       ></markal-legend-panel>
     `;
   }
+
+  private handleDayFocus = (event: CustomEvent<DateKey>): void => {
+    this.weekStart = event.detail;
+    this.changeBoardMode("day");
+  };
 
   private renderBlockEditor() {
     const block = this.editingBlockId
@@ -1397,7 +1405,10 @@ export class MarkalApp extends LitElement {
   }
 
   private changeWeek = (event: CustomEvent<DateKey>): void => {
-    this.weekStart = startOfWeek(event.detail);
+    // In day view weekStart IS the single shown day — don't snap to the week.
+    this.weekStart = this.boardMode === "day"
+      ? event.detail
+      : startOfWeek(event.detail);
     this.highlightedActivityId = "";
   };
 
