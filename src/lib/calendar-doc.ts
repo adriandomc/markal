@@ -39,6 +39,9 @@ export function createCalendarDocument(title?: string): CalendarDocument {
       id: createId("legend"),
     })),
     marks: {},
+    // No seed: activities are created 1:1 with blocks (named via the editor).
+    activities: [],
+    blocks: {},
     settings: { ...DEFAULT_SETTINGS },
   };
 }

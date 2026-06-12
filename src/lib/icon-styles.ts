@@ -14,6 +14,10 @@ export const iconStyles = css`
     -moz-osx-font-smoothing: grayscale;
   }
 
+  .ph.ph-calendar-blank::before {
+    content: "\\e10a";
+  }
+
   .ph.ph-calendar-dots::before {
     content: "\\e7b4";
   }
@@ -24,6 +28,14 @@ export const iconStyles = css`
 
   .ph.ph-caret-right::before {
     content: "\\e13a";
+  }
+
+  .ph.ph-columns::before {
+    content: "\\e546";
+  }
+
+  .ph.ph-minus::before {
+    content: "\\e32a";
   }
 
   .ph.ph-copy::before {
@@ -50,12 +62,20 @@ export const iconStyles = css`
     content: "\\e408";
   }
 
+  .ph.ph-sun-horizon::before {
+    content: "\\e5b6";
+  }
+
   .ph.ph-file-pdf::before {
     content: "\\e702";
   }
 
   .ph.ph-file-png::before {
     content: "\\eb18";
+  }
+
+  .ph.ph-file-html::before {
+    content: "\\eb38";
   }
 
   .ph.ph-gear-six::before {

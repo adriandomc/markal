@@ -5,7 +5,7 @@ import "./markal-modal.ts";
 import { iconStyles } from "../lib/icon-styles.ts";
 import { localStyles } from "../lib/lit-styles.ts";
 
-export type ExportFormat = "png" | "pdf";
+export type ExportFormat = "png" | "pdf" | "html";
 
 export class MarkalExportModal extends LitElement {
   static properties = {
@@ -51,7 +51,20 @@ export class MarkalExportModal extends LitElement {
             <i class="ph ph-file-pdf"></i>
             PDF
           </button>
+          <button
+            class="action-button"
+            type="button"
+            @click="${() => this.emitFormat("html")}"
+          >
+            <i class="ph ph-file-html"></i>
+            HTML
+          </button>
         </div>
+        <p class="export-modal-note">
+          ${msg(
+            "El HTML es un archivo interactivo de solo lectura que puedes compartir; incluye el mes y la semana.",
+          )}
+        </p>
         <div class="export-status" role="status">${this.exportMessage}</div>
       </markal-modal>
     `;
