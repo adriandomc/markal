@@ -1,6 +1,7 @@
 export type DateKey = string;
 export type ViewMode = "week" | "months" | "years";
 export type MarkAction = "add" | "remove";
+export type BoardMode = "marks" | "schedule" | "day";
 
 export interface DateRange {
   start: DateKey;
@@ -11,6 +12,21 @@ export interface LegendItem {
   id: string;
   label: string;
   fillColor: string;
+}
+
+export interface Activity {
+  id: string;
+  label:string;
+  fillColor: string;
+}
+
+export interface ScheduledBlock {
+  id: string;
+  activityId: string;
+  startDate: DateKey;
+  endDate: DateKey;
+  startMinutes: number;
+  endMinutes: number;
 }
 
 export interface CalendarSettings {
@@ -28,6 +44,8 @@ export interface CalendarDocument {
   dateRange: DateRange;
   legends: LegendItem[];
   marks: Record<DateKey, string[]>;
+  activities: Activity[];
+  blocks: Record<string, ScheduledBlock>;
   settings: CalendarSettings;
 }
 

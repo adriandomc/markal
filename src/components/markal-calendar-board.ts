@@ -19,6 +19,7 @@ import {
   parseDateKey,
 } from "../lib/dates.ts";
 import { weekdayNarrowLabels } from "../lib/i18n-labels.ts";
+import { datesWithBlocks } from "../lib/blocks.ts";
 import { pickTextStyle } from "../lib/contrast.ts";
 import { localStyles } from "../lib/lit-styles.ts";
 
@@ -46,6 +47,10 @@ export class MarkalCalendarBoard extends LitElement {
   private activePointerId: number | null = null;
   private isTouchPointer = false;
   private longPressTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
+  // Render-scoped cache of dates that carry at least one scheduled block, used
+  // to draw the month-view indicator. Derived from blocks each render — never
+  // written into `marks` (those are legend ids consumed by other code paths).
+  private scheduledDates: Set<DateKey> = new Set();
   private static readonly MOUSE_DRAG_PX = 8;
   private static readonly TAP_CANCEL_PX = 10;
   private static readonly LONG_PRESS_MS = 250;
@@ -90,6 +95,7 @@ export class MarkalCalendarBoard extends LitElement {
     const mode = getAutoViewMode(this.document.dateRange);
 
     const paintMode = Boolean(this.selectedLegendId);
+    this.scheduledDates = datesWithBlocks(this.document.blocks ?? {});
 
     return html`
       <section
@@ -181,6 +187,7 @@ export class MarkalCalendarBoard extends LitElement {
       ? pickTextStyle(legends.map((legend) => legend.fillColor))
       : "";
     const disabled = !inMonth || !inRange;
+    const hasBlocks = inMonth && this.scheduledDates.has(date);
 
     return html`
       <button
@@ -190,6 +197,7 @@ export class MarkalCalendarBoard extends LitElement {
           inMonth ? "" : "out-month",
           inRange ? "" : "out-range",
           legends.length ? "marked" : "",
+          hasBlocks ? "has-blocks" : "",
         ].join(" ")}"
         style="${textStyle}"
         type="button"
@@ -204,6 +212,7 @@ export class MarkalCalendarBoard extends LitElement {
           `
           : nothing} ${this.renderLayers(legends)}
         <span class="day-number">${inMonth ? day : ""}</span>
+        ${hasBlocks ? html`<span class="block-dot"></span>` : nothing}
       </button>
     `;
   }
