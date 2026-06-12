@@ -88,7 +88,7 @@ import {
 
 
 const MOBILE_QUERY = "(max-width: 980px)";
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.2.0";
 const REPO_URL = "https://github.com/adriandomc/markal";
 const CHANGELOG_URL = `${REPO_URL}/releases`;
 
