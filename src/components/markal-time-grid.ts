@@ -59,12 +59,17 @@ const DEFAULT_BLOCK_MINUTES = 60;
 
 export class MarkalTimeGrid extends LitElement {
   static properties = {
+    mode: { type: String, reflect: true },
     document: { attribute: false },
     weekStart: { attribute: false },
     highlightedActivityId: { type: String },
     dragging: { type: Boolean, reflect: true },
+    zoomLevel: { state: true },
     _draft: { state: true },
   };
+
+  mode = "schedule";
+  zoomLevel = 1;
 
   document!: CalendarDocument;
   // Controlled by the parent (app.ts owns week navigation + the last-touched
@@ -89,30 +94,84 @@ export class MarkalTimeGrid extends LitElement {
 
   static styles = [iconStyles, localStyles(timeGridStyles)];
 
+  private initialPinchDistance: number | null = null;
+  private initialZoomLevel = 1;
+
   connectedCallback(): void {
     super.connectedCallback();
-    // Non-passive so we can preventDefault once a drag engages — this is what
-    // stops the grid body from scrolling mid-drag (mirrors the month board).
     this.addEventListener("touchmove", this.handleTouchMove, {
       passive: false,
     });
+    this.addEventListener("touchstart", this.handleTouchStart, { passive: true });
+    this.addEventListener("touchend", this.handleTouchEnd, { passive: true });
+    this.addEventListener("wheel", this.handleWheel, { passive: false });
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener("touchmove", this.handleTouchMove);
+    this.removeEventListener("touchstart", this.handleTouchStart);
+    this.removeEventListener("touchend", this.handleTouchEnd);
+    this.removeEventListener("wheel", this.handleWheel);
     this.cleanupGesture();
   }
 
+  private handleWheel = (event: WheelEvent): void => {
+    if (event.ctrlKey) {
+      event.preventDefault();
+      const zoomSpeed = 0.01;
+      this.zoomLevel = Math.min(4, Math.max(0.5, this.zoomLevel - event.deltaY * zoomSpeed));
+    }
+  };
+
+  private handleTouchStart = (event: TouchEvent): void => {
+    if (event.touches.length === 2) {
+      this.initialPinchDistance = Math.hypot(
+        event.touches[0].clientX - event.touches[1].clientX,
+        event.touches[0].clientY - event.touches[1].clientY
+      );
+      this.initialZoomLevel = this.zoomLevel;
+    }
+  };
+
   private handleTouchMove = (event: TouchEvent): void => {
-    if (this.gesture?.moved) {
+    if (event.touches.length === 2 && this.initialPinchDistance !== null) {
+      event.preventDefault(); // Prevent native zoom/pan
+      const distance = Math.hypot(
+        event.touches[0].clientX - event.touches[1].clientX,
+        event.touches[0].clientY - event.touches[1].clientY
+      );
+      const scale = distance / this.initialPinchDistance;
+      this.zoomLevel = Math.min(4, Math.max(0.5, this.initialZoomLevel * scale));
+    } else if (this.gesture?.moved) {
       event.preventDefault();
     }
   };
 
+  private handleTouchEnd = (event: TouchEvent): void => {
+    if (event.touches.length < 2) {
+      this.initialPinchDistance = null;
+    }
+  };
+
   private get weekDates(): DateKey[] {
+    if (this.mode === "day") {
+      return [this.weekStart];
+    }
     return Array.from({ length: 7 }, (_, i) => addDays(this.weekStart, i));
   }
+
+  private handleDayHeaderClick = (date: DateKey) => {
+    if (this.mode === "schedule") {
+      this.dispatchEvent(
+        new CustomEvent<DateKey>("day-focus", {
+          detail: date,
+          bubbles: true,
+          composed: true,
+        }),
+      );
+    }
+  };
 
   render() {
     if (!this.document) {
@@ -131,14 +190,20 @@ export class MarkalTimeGrid extends LitElement {
             ${dates.map((date) => {
               const parsed = parseDateKey(date);
               return html`
-                <span class="day-header ${date === today ? "today" : ""}">
+                <span 
+                  class="day-header ${date === today ? "today" : ""} ${this.mode === 'schedule' ? 'clickable' : ''}"
+                  @click="${() => this.handleDayHeaderClick(date)}"
+                >
                   <span class="weekday">${weekdays[parsed.getDay()]}</span>
                   <span class="day-number">${parsed.getDate()}</span>
                 </span>
               `;
             })}
           </div>
-          <div class="grid-body">
+          <div
+            class="grid-body"
+            style="--hour-height: calc(var(--base-hour-height) * ${this.zoomLevel});"
+          >
             <div class="hour-gutter">
               ${Array.from(
                 { length: 24 },
@@ -158,7 +223,8 @@ export class MarkalTimeGrid extends LitElement {
   private renderNav(dates: DateKey[]) {
     const locale = getLocale();
     const start = parseDateKey(dates[0]);
-    const end = parseDateKey(dates[6]);
+    // dates has 1 entry in day mode and 7 in week mode — never hardcode [6].
+    const end = parseDateKey(dates[dates.length - 1]);
     const dayMonth = new Intl.DateTimeFormat(locale, {
       day: "numeric",
       month: "short",
@@ -172,43 +238,60 @@ export class MarkalTimeGrid extends LitElement {
     const label = start.getFullYear() === end.getFullYear()
       ? `${dayMonth.format(start)} – ${dayMonthYear.format(end)}`
       : `${dayMonthYear.format(start)} – ${dayMonthYear.format(end)}`;
+    const displayLabel = this.mode === "day" ? dayMonthYear.format(start) : label;
     const range = this.document.dateRange;
     return html`
       <header class="grid-nav">
-        <markal-icon-button
-          icon="caret-left"
-          size="sm"
-          label="${msg("Semana anterior")}"
-          @click="${this.goToPreviousWeek}"
-        ></markal-icon-button>
-        <button
-          class="today-button"
-          type="button"
-          @click="${this.goToToday}"
-        >${msg("Hoy")}</button>
-        <markal-icon-button
-          icon="caret-right"
-          size="sm"
-          label="${msg("Semana siguiente")}"
-          @click="${this.goToNextWeek}"
-        ></markal-icon-button>
-        <button
-          class="week-label"
-          type="button"
-          title="${msg("Elegir semana")}"
-          @click="${this.openWeekPicker}"
-        >
-          <span>${label}</span>
-          <input
-            class="week-picker"
-            type="date"
-            aria-label="${msg("Elegir semana")}"
-            .value="${this.weekStart}"
-            min="${range.start}"
-            max="${range.end}"
-            @change="${this.handleWeekPicked}"
-          />
-        </button>
+        <div class="nav-controls">
+          <markal-icon-button
+            icon="caret-left"
+            size="sm"
+            label="${msg("Anterior")}"
+            @click="${this.goToPreviousWeek}"
+          ></markal-icon-button>
+          <button
+            class="today-button"
+            type="button"
+            @click="${this.goToToday}"
+          >${msg("Hoy")}</button>
+          <markal-icon-button
+            icon="caret-right"
+            size="sm"
+            label="${msg("Siguiente")}"
+            @click="${this.goToNextWeek}"
+          ></markal-icon-button>
+          <button
+            class="week-label"
+            type="button"
+            title="${msg("Elegir fecha")}"
+            @click="${this.openWeekPicker}"
+          >
+            <span>${displayLabel}</span>
+            <input
+              class="week-picker"
+              type="date"
+              aria-label="${msg("Elegir fecha")}"
+              .value="${this.weekStart}"
+              min="${range.start}"
+              max="${range.end}"
+              @change="${this.handleWeekPicked}"
+            />
+          </button>
+        </div>
+        <div class="zoom-controls">
+          <markal-icon-button
+            icon="minus"
+            size="sm"
+            label="${msg("Alejar")}"
+            @click="${() => this.zoomLevel = Math.max(0.5, this.zoomLevel - 0.25)}"
+          ></markal-icon-button>
+          <markal-icon-button
+            icon="plus"
+            size="sm"
+            label="${msg("Acercar")}"
+            @click="${() => this.zoomLevel = Math.min(4, this.zoomLevel + 0.25)}"
+          ></markal-icon-button>
+        </div>
       </header>
     `;
   }
@@ -252,8 +335,11 @@ export class MarkalTimeGrid extends LitElement {
     const highlighted = highlightActive &&
       block.activityId === this.highlightedActivityId;
     const dimmed = highlightActive && !highlighted;
-    const widthPct = 100 / laneCount;
-    const leftPct = lane * widthPct;
+    // Lanes divide the column minus a right gutter (--block-gutter), leaving an
+    // empty strip to grab the column behind and drag a new overlapping block.
+    const laneWidth = `(100% - var(--block-gutter)) / ${laneCount}`;
+    const left = `calc(${laneWidth} * ${lane} + 2px)`;
+    const width = `calc(${laneWidth} - 4px)`;
     const locale = getLocale();
     return html`
       <div
@@ -262,7 +348,7 @@ export class MarkalTimeGrid extends LitElement {
           : ""} ${dimmed ? "dimmed" : ""}"
         data-block-id="${block.id}"
         data-date="${date}"
-        style="top: ${top}%; height: ${height}%; left: calc(${leftPct}% + 2px); width: calc(${widthPct}% - 4px); background: ${activity
+        style="top: ${top}%; height: ${height}%; left: ${left}; width: ${width}; background: ${activity
           .fillColor}; ${pickTextStyle([activity.fillColor])}"
         @pointerdown="${(event: PointerEvent) =>
           this.handleSegmentPointerDown(event, block, date)}"
@@ -641,11 +727,13 @@ export class MarkalTimeGrid extends LitElement {
   }
 
   private goToPreviousWeek = (): void => {
-    this.dispatchWeekChange(addDays(this.weekStart, -7));
+    const delta = this.mode === "day" ? -1 : -7;
+    this.dispatchWeekChange(addDays(this.weekStart, delta));
   };
 
   private goToNextWeek = (): void => {
-    this.dispatchWeekChange(addDays(this.weekStart, 7));
+    const delta = this.mode === "day" ? 1 : 7;
+    this.dispatchWeekChange(addDays(this.weekStart, delta));
   };
 
   private goToToday = (): void => {

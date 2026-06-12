@@ -30,6 +30,14 @@ export const iconStyles = css`
     content: "\\e13a";
   }
 
+  .ph.ph-columns::before {
+    content: "\\e546";
+  }
+
+  .ph.ph-minus::before {
+    content: "\\e32a";
+  }
+
   .ph.ph-copy::before {
     content: "\\e1ca";
   }

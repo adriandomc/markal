@@ -102,21 +102,46 @@ export interface LaidOutBlock {
   laneCount: number;
 }
 
-/** Partition a day's blocks into lanes so overlapping ones sit side by side. */
 export function layoutDayBlocks(blocks: ScheduledBlock[]): LaidOutBlock[] {
   const sorted = [...blocks].sort((a, b) =>
     a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes
   );
-  const laneEnds: number[] = []; // end of the last block placed in each lane
-  const placed = sorted.map((block) => {
-    let lane = laneEnds.findIndex((end) => end <= block.startMinutes);
-    if (lane === -1) {
-      lane = laneEnds.length;
-      laneEnds.push(0);
+  const result: LaidOutBlock[] = [];
+  
+  let i = 0;
+  while (i < sorted.length) {
+    const cluster = [sorted[i]];
+    let clusterEnd = sorted[i].endMinutes;
+    let j = i + 1;
+    
+    // Find all blocks that transitively overlap with the current cluster
+    while (j < sorted.length && sorted[j].startMinutes < clusterEnd) {
+      cluster.push(sorted[j]);
+      clusterEnd = Math.max(clusterEnd, sorted[j].endMinutes);
+      j++;
     }
-    laneEnds[lane] = block.endMinutes;
-    return { block, lane, laneCount: 0 };
-  });
-  const laneCount = laneEnds.length;
-  return placed.map((item) => ({ ...item, laneCount }));
+    
+    // Assign lanes within this cluster
+    const laneEnds: number[] = [];
+    const clusterPlaced = cluster.map((block) => {
+      // Find the first lane where this block can fit (lane end <= block start)
+      let lane = laneEnds.findIndex((end) => end <= block.startMinutes);
+      if (lane === -1) {
+        lane = laneEnds.length;
+        laneEnds.push(0);
+      }
+      laneEnds[lane] = block.endMinutes;
+      return { block, lane, laneCount: 0 };
+    });
+    
+    const laneCount = laneEnds.length;
+    for (const item of clusterPlaced) {
+      item.laneCount = laneCount;
+      result.push(item);
+    }
+    
+    i = j;
+  }
+  
+  return result;
 }

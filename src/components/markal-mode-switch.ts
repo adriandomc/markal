@@ -5,12 +5,6 @@ import type { BoardMode } from "../types.ts";
 import { iconStyles } from "../lib/icon-styles.ts";
 import { localStyles } from "../lib/lit-styles.ts";
 
-/**
- * Sibling of markal-switch (not a reuse): its thumb carries an icon and it
- * loads iconStyles, and its travel is driven by the reflected `mode` attribute
- * rather than `checked`. Toggles between the month board ("marks") and the
- * weekly time grid ("schedule").
- */
 export class MarkalModeSwitch extends LitElement {
   static properties = {
     mode: { type: String, reflect: true },
@@ -26,28 +20,52 @@ export class MarkalModeSwitch extends LitElement {
   static styles = [iconStyles, localStyles(modeSwitchStyles)];
 
   render() {
-    const isSchedule = this.mode === "schedule";
-    const label = isSchedule ? msg("Vista de semana") : msg("Vista de mes");
     return html`
-      <button
-        type="button"
-        role="switch"
-        aria-checked="${String(isSchedule)}"
-        aria-label="${label}"
-        title="${label}"
-        @click="${this.toggle}"
+      <div
+        class="switch-container"
+        role="radiogroup"
+        aria-label="${msg("Vista del calendario")}"
       >
-        <span class="thumb">
-          <i
-            class="ph ${isSchedule ? "ph-sun-horizon" : "ph-calendar-blank"}"
-          ></i>
-        </span>
-      </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked="${this.mode === "marks"}"
+          aria-label="${msg("Vista de mes")}"
+          title="${msg("Vista de mes")}"
+          @click="${() => this.setMode("marks")}"
+          class="${this.mode === "marks" ? "active" : ""}"
+        >
+          <i class="ph ph-calendar-blank"></i>
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked="${this.mode === "schedule"}"
+          aria-label="${msg("Vista de semana")}"
+          title="${msg("Vista de semana")}"
+          @click="${() => this.setMode("schedule")}"
+          class="${this.mode === "schedule" ? "active" : ""}"
+        >
+          <i class="ph ph-columns"></i>
+        </button>
+        <button
+          type="button"
+          role="radio"
+          aria-checked="${this.mode === "day"}"
+          aria-label="${msg("Vista de día")}"
+          title="${msg("Vista de día")}"
+          @click="${() => this.setMode("day")}"
+          class="${this.mode === "day" ? "active" : ""}"
+        >
+          <i class="ph ph-sun-horizon"></i>
+        </button>
+      </div>
     `;
   }
 
-  private toggle = (): void => {
-    this.mode = this.mode === "marks" ? "schedule" : "marks";
+  private setMode(mode: BoardMode): void {
+    if (this.mode === mode) return;
+    this.mode = mode;
     this.dispatchEvent(
       new CustomEvent<BoardMode>("mode-change", {
         detail: this.mode,
@@ -55,7 +73,7 @@ export class MarkalModeSwitch extends LitElement {
         composed: true,
       }),
     );
-  };
+  }
 }
 
 customElements.define("markal-mode-switch", MarkalModeSwitch);
